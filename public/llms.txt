@@ -1,0 +1,32 @@
+# Nou
+
+> Nou is a free, installable weather web app focused on the current day. Its brand promise is “Weather for now.” It provides current weather estimates with visible update times, today’s remaining hourly forecast, daylight themes, real maps, and rain radar.
+
+The canonical website is https://nou-six.vercel.app/. Nou means “now” in Afrikaans. The app is available in English, supports Celsius and Fahrenheit, and works in modern desktop and mobile browsers.
+
+- Current conditions are Open-Meteo weather model estimates, usually updated in 15-minute intervals. They are not measurements taken every second at the user's device.
+- The clock follows the selected place's timezone and the device clock. Weather readings show their own provider update time.
+- Hourly values are forecasts for the selected place's current calendar day. Nou does not offer a multi-day forecast.
+- Readings saved offline can be stale. An offline or stale-reading notice and update time distinguish them from refreshed data.
+- London is the initial location. It does not imply that the visitor is in London. Device location is requested only when the visitor chooses it.
+
+Saved places and preferences are stored locally in the browser. Map tiles and fresh weather require network access. Data coverage, refresh intervals, and PWA installation behavior depend on providers and browsers.
+
+## Pages
+
+- [Weather app](https://nou-six.vercel.app/): Current conditions, today's hours, wind, humidity, UV, daylight, visibility, pressure, and air quality. Users can search for places, open the map, and save places on their device.
+- [About Nou](https://nou-six.vercel.app/about): Product overview, name and logo story, weather sources, installation, daylight themes, offline behavior, and privacy.
+- [Full product guide](https://nou-six.vercel.app/llms-full.txt): Expanded factual context for AI assistants.
+- [Sitemap](https://nou-six.vercel.app/sitemap.xml): Canonical, indexable pages.
+
+## Sources
+
+- [Open-Meteo](https://open-meteo.com/): Weather, place search, and CAMS air quality estimates.
+- [OpenStreetMap](https://www.openstreetmap.org/copyright): Map data and tiles; Nominatim provides reverse geocoding.
+- [RainViewer](https://www.rainviewer.com/): Latest available precipitation radar with its frame timestamp.
+
+## Optional
+
+- [Source repository](https://github.com/thembaxx/nou): Next.js, TypeScript, Tailwind CSS, Motion, Three.js, MapLibre, and pnpm implementation.
+- [Brand guide](https://nou-six.vercel.app/brand/brand-guide.svg): Name, symbol, palette, typography, and voice.
+- [Logo symbol](https://nou-six.vercel.app/brand/symbol.svg): Vector brand mark.

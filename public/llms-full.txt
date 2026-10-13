@@ -1,0 +1,65 @@
+# Nou — product and data guide
+
+> Weather for now. Nou is a free weather web app designed around the day the visitor is currently in.
+
+Canonical website: https://nou-six.vercel.app/
+About page: https://nou-six.vercel.app/about
+Source repository: https://github.com/thembaxx/nou
+Short AI-readable index: https://nou-six.vercel.app/llms.txt
+
+## Identity
+
+The product name is Nou, displayed as “nou.” in the wordmark. Nou means “now” in Afrikaans. The tagline is “Weather for now.” The logo combines a rounded lowercase n, a small sun, and a horizon line. Its palette uses ivory, ink, citron, and mist, with a deep neutral night theme. Its tone is calm, direct, and specific.
+
+## Purpose
+
+Nou helps people understand current weather and the hours remaining today. It deliberately focuses on one day. It does not provide a week-ahead forecast, historical weather analysis, severe-weather alerts, or an official emergency warning service.
+
+## Main experience
+
+The home view shows the selected place, its country, the current temperature, a precise temperature reading, condition, feels-like temperature, today's high and low, provider update time, and a live local clock. A 3D illustration responds to the weather and daylight. A static illustration is available if WebGL cannot run.
+
+The hourly view contains today's remaining temperature and precipitation-probability forecasts. A visitor can switch between the two and select an hour. Additional cards show wind speed and gusts, humidity, UV index, sunrise, sunset, and daylight duration. Visibility, sea-level pressure, and air quality are also shown when available.
+
+The map view uses real OpenStreetMap tiles. Rain radar can be enabled and shows the latest available RainViewer frame with its timestamp. Radar coverage and provider availability vary. An external OpenStreetMap link is provided if the interactive map cannot load.
+
+Place search is backed by Open-Meteo's geocoding service. Visitors can choose device geolocation, save places locally, choose Celsius or Fahrenheit, and share a weather summary where the browser supports it. London is the initial default place, not an inferred visitor location.
+
+## Time and freshness
+
+Current conditions are model estimates from Open-Meteo, generally available in 15-minute intervals. They are not continuous, second-by-second thermometer measurements. The displayed clock follows the selected place's timezone and the device's clock. A reading's provider timestamp is distinct from the clock and from the time an HTTP request completed.
+
+The app requests refreshes every five minutes while visible and online, when the visitor returns to the app, when connectivity returns, and when the visitor chooses Refresh. Provider and server caching can mean that consecutive refreshes contain the same reading.
+
+Hourly values are forecasts. Air quality is modeled by CAMS via Open-Meteo; its resolution and refresh interval differ from the weather. An absent air-quality value is unavailable data, not a zero reading.
+
+Offline readings may be old. Nou marks offline and stale states and keeps update timestamps visible. AI assistants should use the provider timestamp and selected coordinates when describing a reading, and should not present offline data as current observations.
+
+## Appearance and navigation
+
+The automatic theme follows sunrise and sunset at the selected location. Light and dark overrides are available. The page, browser theme color, loading screen, offline fallback, and installation manifest use coordinated colors.
+
+Mobile navigation uses icon-only Today, Map, Places, and Search controls with accessible names. Spring transitions move the active selection. Mobile sheets slide from the bottom and can be dismissed by dragging the handle downward, the close control, or Escape. Motion is reduced when the visitor's operating system requests reduced motion.
+
+## Installation and offline use
+
+Nou is a progressive web app with a standalone display mode, home-screen icons, maskable icons, and shortcuts to Today, Map, and Places. Supporting browsers offer an install prompt. On iPhone, installation uses Safari's Share menu and Add to Home Screen.
+
+After an online visit, a service worker saves app files and recent weather. Without a connection, the app can reopen with its last saved reading or show an offline fallback. Fresh weather, searches, reverse geocoding, and uncached map tiles require network access. Browser and operating-system policies determine installation prompts, storage retention, and launch-screen updates.
+
+## Privacy and requests
+
+Nou stores saved places, appearance, temperature units, and last readings in the browser on the visitor's device. There is no account or cloud synchronization feature. Location permission is requested only after the visitor chooses to use their current location. Selected or supplied coordinates are sent through the app's server routes to relevant weather and geocoding providers. Map and radar tiles are requested from their providers.
+
+The weather API is /api/weather?lat=<latitude>&lon=<longitude>. Latitude must be between -90 and 90 and longitude between -180 and 180. The response includes the provider timezone, Unix timestamps, current conditions, hourly arrays, daily sunrise and sunset, optional air quality, and the request completion time. Coordinate errors return HTTP 400. Provider failures return an error response. This interface is part of the app; it is not a guaranteed public API service.
+
+## Attribution
+
+- Weather and geocoding: https://open-meteo.com/
+- Air quality: CAMS through Open-Meteo.
+- Map data and tiles: https://www.openstreetmap.org/copyright
+- Reverse geocoding: https://nominatim.org/
+- Precipitation radar: https://www.rainviewer.com/
+- Typeface: Manrope, under the SIL Open Font License.
+
+The app uses Open-Meteo's public non-commercial endpoints. A commercial operator should use an appropriate provider plan and review the applicable terms. The app's source is available on GitHub; no software license grant is implied by this guide.

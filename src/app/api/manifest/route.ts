@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { BRAND } from "@/lib/brand";
 
 export async function GET(request: NextRequest) {
   const dark = request.nextUrl.searchParams.get("theme") === "dark";
@@ -6,9 +7,9 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(
     {
       id: "/",
-      name: "Nou · A little more present.",
-      short_name: "Nou",
-      description: "The weather that matters. The day you’re in.",
+      name: `${BRAND.name} · ${BRAND.tagline}`,
+      short_name: BRAND.name,
+      description: BRAND.description,
       lang: "en",
       start_url: "/",
       scope: "/",

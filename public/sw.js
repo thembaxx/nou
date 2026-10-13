@@ -1,8 +1,8 @@
-const VERSION = "nou-v2";
+const VERSION = "nou-v3";
 const STATIC = `${VERSION}-static`;
 const PAGES = `${VERSION}-pages`;
 const API = `${VERSION}-data`;
-const PRECACHE = ["/offline.html", "/icon.svg", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png", "/manifest.webmanifest", "/fonts/manrope.woff2"];
+const PRECACHE = ["/offline.html", "/icon.svg", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png", "/manifest.webmanifest", "/fonts/manrope.woff2", "/api/manifest?theme=light", "/api/manifest?theme=dark"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(STATIC).then(cache => cache.addAll(PRECACHE)).then(() => self.skipWaiting()));
@@ -45,7 +45,7 @@ self.addEventListener("fetch", event => {
       try { const response = await fetch(request); if (response.ok) { const cache = await caches.open(API); await cache.put(request, response.clone()); await limit(cache, 15); } return response; }
       catch { return (await caches.match(request)) || new Response(JSON.stringify({ error: "You’re offline and no saved reading is available for this place." }), { status: 503, headers: { "Content-Type": "application/json" } }); }
     })());
-  } else if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/vendor/") || PRECACHE.includes(url.pathname)) {
+  } else if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/vendor/") || url.pathname === "/api/manifest" || PRECACHE.includes(url.pathname)) {
     event.respondWith((async () => {
       const cached = await caches.match(request); if (cached) return cached;
       const response = await fetch(request);

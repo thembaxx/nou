@@ -1,6 +1,6 @@
 # Nou
 
-**A little more present.** A weather app focused entirely on the current day, inspired by the attached ivory, pale blue, citron, and native iOS interface references.
+**Weather for now.** A weather app focused entirely on the current day, inspired by the attached ivory, pale blue, citron, and native iOS interface references.
 
 Next.js 16 App Router · React 19 · TypeScript · Tailwind CSS 4 · Motion · Three.js / React Three Fiber · Phosphor · MapLibre · oxfmt · oxlint. Dependencies are resolved in `pnpm-lock.yaml`; Node 24 and pnpm are required.
 
@@ -45,3 +45,11 @@ Preferences, places, and last readings are stored locally on the user’s device
 Import `thembaxx/nou` into Vercel, select Next.js and Node 24, and use `pnpm install --frozen-lockfile` with `pnpm build`. No environment variables are required for the public non-commercial data endpoints.
 
 `pnpm assets` regenerates the logo icons and social card. `pnpm test:e2e` runs browser integration checks against an app started at `http://localhost:3000` (or `BASE_URL`). Run `pnpm exec playwright install chromium` first.
+
+## Identity and discovery
+
+Nou means “now” in Afrikaans. Its tagline is **Weather for now.** The custom n/sun/horizon symbol and outlined Manrope wordmark are shared across the interface, loading screen, favicon, PWA icons, and social preview. Downloadable SVG assets and a visual brand guide are in `public/brand/`; the brand rationale and motion guidance are in `docs/brand.md`.
+
+Search metadata uses the verified production origin `https://nou-six.vercel.app`, canonical URLs, Open Graph/Twitter previews, and factual Brand, WebSite, and WebApplication JSON-LD. `/about` provides visible, server-rendered product and data-source information. `/robots.txt` and `/sitemap.xml` identify the indexable pages. `/llms.txt` follows the proposed Markdown format; `/llms-full.txt` provides expanded factual context. `/LLM.txt` and `/llm.txt` redirect to `/llms.txt`.
+
+Mobile navigation is icon-only, retains accessible names, and uses a shared spring selection indicator. Mobile sheets slide from the bottom and support dragging the handle to dismiss. Spring timing, press feedback, and small page transitions follow iOS patterns and respect reduced-motion preferences.

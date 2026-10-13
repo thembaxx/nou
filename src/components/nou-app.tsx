@@ -2,7 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "motion/react";
+import Link from "next/link";
+import {
+  AnimatePresence,
+  motion,
+  MotionConfig,
+  useReducedMotion,
+  useDragControls,
+} from "motion/react";
+import { NouMark, NouWordmark } from "./brand-mark";
+import { BRAND } from "@/lib/brand";
+import { IOS_SPRING, IOS_SHEET_SPRING, IOS_PRESS } from "@/lib/ios-motion";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -109,20 +119,6 @@ const storage = {
   },
 };
 
-export function NouMark({ size = 30 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <path
-        d="M16 2v4M16 26v4M2 16h4M26 16h4M6.1 6.1l2.8 2.8M23.1 23.1l2.8 2.8M6.1 25.9l2.8-2.8M23.1 8.9l2.8-2.8"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <circle cx="16" cy="16" r="6.3" fill="currentColor" />
-    </svg>
-  );
-}
-
 function WeatherIcon({
   code,
   night = false,
@@ -159,11 +155,25 @@ function SheetDialog({
   close: () => void;
 }) {
   const dialog = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
+  const reduced = !!useReducedMotion();
+  const [mobile, setMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches,
+  );
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 760px)");
+    const update = () => setMobile(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const target = dialog.current?.querySelector<HTMLElement>("input,button");
+    const target = dialog.current?.querySelector<HTMLElement>(
+      'input,button[aria-label="Close dialog"]',
+    );
     target?.focus();
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") close();
@@ -172,7 +182,7 @@ function SheetDialog({
           dialog.current?.querySelectorAll<HTMLElement>(
             'button:not([disabled]),input,a[href],select,[tabindex="0"]',
           ) ?? [],
-        );
+        ).filter((node) => node.getClientRects().length > 0);
         const first = nodes[0],
           last = nodes.at(-1);
         if (e.shiftKey && document.activeElement === first) {
@@ -197,6 +207,7 @@ function SheetDialog({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: reduced ? 0 : 0.2 }}
       onClick={close}
     >
       <motion.div
@@ -205,13 +216,34 @@ function SheetDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="sheet-title"
-        initial={{ y: 45, opacity: 0, scale: 0.98 }}
+        initial={
+          reduced
+            ? false
+            : { y: mobile ? "100%" : 18, opacity: mobile ? 1 : 0, scale: mobile ? 1 : 0.98 }
+        }
         animate={{ y: 0, opacity: 1, scale: 1 }}
-        exit={{ y: 35, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 350, damping: 32 }}
+        exit={reduced ? { opacity: 0 } : { y: mobile ? "100%" : 12, opacity: mobile ? 1 : 0 }}
+        transition={reduced ? { duration: 0 } : IOS_SHEET_SPRING}
+        drag={mobile && !reduced ? "y" : false}
+        dragListener={false}
+        dragControls={dragControls}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.65 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 100 || (info.offset.y > 25 && info.velocity.y > 550)) close();
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sheet-handle" />
+        <button
+          className="sheet-handle"
+          aria-label="Dismiss dialog"
+          onClick={close}
+          onPointerDown={(event) => {
+            if (mobile && !reduced) dragControls.start(event);
+          }}
+        >
+          <span />
+        </button>
         <div className="sheet-heading">
           <h2 id="sheet-title">{title}</h2>
           <button className="icon-button" aria-label="Close dialog" onClick={close}>
@@ -475,7 +507,8 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
     if (storedUnit === "c" || storedUnit === "f") setUnit(storedUnit);
     if (["auto", "light", "dark"].includes(storedTheme)) setTheme(storedTheme);
     if (validPlace(storedPlace) && storedPlace.id !== LONDON.id) void loadWeather(storedPlace);
-    else if (!initialWeather) void loadWeather(LONDON);
+    else if (!initialWeather || Date.now() - initialWeather.current.time * 1000 > 20 * 60000)
+      void loadWeather(LONDON);
     else storage.set(`nou-weather-${LONDON.id}`, initialWeather);
     const clock = setInterval(() => setNow(Date.now()), 1000);
     const refresh = setInterval(() => {
@@ -642,7 +675,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
     if (!weather) return;
     const data = {
       title: `Nou · ${place.name} today`,
-      text: `${place.name}: ${temperature(weather.current.temperature_2m, unit)}°${unit.toUpperCase()}, ${condition(weather.current.weather_code).toLowerCase()}. A little more present.`,
+      text: `${place.name}: ${temperature(weather.current.temperature_2m, unit)}°${unit.toUpperCase()}, ${condition(weather.current.weather_code).toLowerCase()}. Weather for now.`,
       url: window.location.origin,
     };
     try {
@@ -682,15 +715,13 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="app-shell" data-ready={ready}>
+      <div className="app-shell" data-ready={ready} data-sheet-open={!!sheet}>
         <aside className="sidebar">
           <a className="brand" href="/" aria-label="Nou home">
             <NouMark />
-            <span>
-              nou<span className="brand-dot">.</span>
-            </span>
+            <NouWordmark />
           </a>
-          <p className="brand-caption">A little more present.</p>
+          <p className="brand-caption">{BRAND.tagline}</p>
           <div className="sidebar-nav">
             <p className="overline">YOUR DAY, SIMPLIFIED</p>
             {(
@@ -737,7 +768,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
           <header className="topbar">
             <a className="brand mobile-brand" href="/" aria-label="Nou home">
               <NouMark size={26} />
-              <span>nou.</span>
+              <NouWordmark />
             </a>
             <div className="date-label">
               <span className="date-dot" />
@@ -853,13 +884,15 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
               )}
             </div>
           ) : (
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={tab}
-                initial={reduced ? false : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.22 }}
+                initial={reduced ? false : { opacity: 0, y: 8, scale: 0.995 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={
+                  reduced ? { duration: 0 } : { ...IOS_SPRING, opacity: { duration: 0.12 } }
+                }
               >
                 {tab === "today" && (
                   <>
@@ -1277,7 +1310,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
           )}
           <footer className="main-footer">
             <span>
-              <NouMark size={16} /> A little more present.
+              <NouMark size={16} /> Weather for now.
             </span>
             <button onClick={() => setSheet("about")}>
               Weather by Open-Meteo <ArrowUpRightIcon size={13} />
@@ -1294,20 +1327,34 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
               { id: "places", label: "Places", icon: HeartIcon },
             ] as const
           ).map((item) => (
-            <button
+            <motion.button
               key={item.id}
+              aria-label={item.label}
               className={tab === item.id ? "active" : ""}
               onClick={() => navigate(item.id)}
               aria-current={tab === item.id ? "page" : undefined}
+              whileTap={reduced ? undefined : IOS_PRESS}
+              transition={IOS_SPRING}
             >
+              {tab === item.id && (
+                <motion.span
+                  className="mobile-tab-indicator"
+                  layoutId="mobile-tab-indicator"
+                  transition={IOS_SPRING}
+                  aria-hidden="true"
+                />
+              )}
               <item.icon size={22} weight={tab === item.id ? "fill" : "regular"} />
-              <span>{item.label}</span>
-            </button>
+            </motion.button>
           ))}
-          <button onClick={() => setSheet("search")}>
+          <motion.button
+            aria-label="Search"
+            onClick={() => setSheet("search")}
+            whileTap={reduced ? undefined : IOS_PRESS}
+            transition={IOS_SPRING}
+          >
             <MagnifyingGlassIcon size={22} />
-            <span>Search</span>
-          </button>
+          </motion.button>
         </nav>
 
         <AnimatePresence>
@@ -1433,13 +1480,10 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                 <>
                   <div className="about-brand">
                     <NouMark size={46} />
-                    <strong>nou.</strong>
+                    <NouWordmark className="about-wordmark" />
                   </div>
-                  <p className="about-intro">A little more present.</p>
-                  <p className="sheet-description">
-                    Nou is weather for the day you’re in. Less scrolling into the future. More
-                    noticing what’s right outside.
-                  </p>
+                  <p className="about-intro">{BRAND.tagline}</p>
+                  <p className="sheet-description">{BRAND.story}</p>
                   <div className="source-note">
                     <InfoIcon size={20} />
                     <div>
@@ -1470,6 +1514,9 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                     Your places and preferences stay on this device. Location is requested only when
                     you choose to use it.
                   </p>
+                  <Link className="about-story-link" href="/about">
+                    The story behind Nou <ArrowUpRightIcon size={17} />
+                  </Link>
                 </>
               )}
               {weather && sheet !== "search" && sheet !== "settings" && sheet !== "about" && (

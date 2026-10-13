@@ -2,8 +2,15 @@ import type { NextConfig } from "next";
 
 const config: NextConfig = {
   poweredByHeader: false,
+  async redirects() {
+    return [
+      { source: "/LLM.txt", destination: "/llms.txt", permanent: true },
+      { source: "/llm.txt", destination: "/llms.txt", permanent: true },
+    ];
+  },
   async headers() {
     return [
+      { source: "/api/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       {
         source: "/sw.js",
         headers: [

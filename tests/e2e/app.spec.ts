@@ -13,7 +13,11 @@ test("live weather, today-only hours, map worker and responsive layout", async (
   page.on("pageerror", (error) => errors.push(error.message));
   await openApp(page);
   await expect(page.locator(".temperature-value")).toBeVisible();
-  const data = await (await request.get("/api/weather?lat=51.5074&lon=-0.1278")).json();
+  const refreshed = page.waitForResponse(
+    (response) => response.url().includes("/api/weather?lat=51.5074") && response.ok(),
+  );
+  await page.getByRole("button", { name: "Refresh current weather", exact: true }).click();
+  const data = await (await refreshed).json();
   await expect(page.locator(".temperature-value")).toContainText(
     Math.round(data.current.temperature_2m).toString(),
   );
@@ -89,7 +93,7 @@ test("PWA reloads offline with saved weather and bounded caches", async ({
   await page.evaluate(() => navigator.serviceWorker.ready);
   await expect
     .poll(() =>
-      page.evaluate(async () => (await caches.open("nou-v2-pages")).match("/").then(Boolean)),
+      page.evaluate(async () => (await caches.open("nou-v3-pages")).match("/").then(Boolean)),
     )
     .toBe(true);
   const manifest = await (await request.get("/api/manifest?theme=dark")).json();
