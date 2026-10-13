@@ -3,6 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="manifest" href="/api/manifest?theme=light" />
     <meta name="theme-color" content="#f5f4ef" />
     <title>Nou · A quiet moment.</title>
     <meta name="robots" content="noindex, nofollow" />
@@ -22,15 +24,20 @@
       * {
         box-sizing: border-box;
       }
+      html {
+        background: var(--bg);
+      }
       body {
         background: var(--bg);
         color: var(--ink);
         margin: 0;
+        min-height: 100vh;
         min-height: 100dvh;
         display: grid;
         place-items: center;
         font-family: system-ui, sans-serif;
-        padding: 30px;
+        padding: max(30px, env(safe-area-inset-top)) max(30px, env(safe-area-inset-right))
+          max(30px, env(safe-area-inset-bottom)) max(30px, env(safe-area-inset-left));
         text-align: center;
       }
       svg {
@@ -57,24 +64,87 @@
         margin-top: 15px;
         cursor: pointer;
       }
+      a {
+        color: inherit;
+        display: block;
+        margin-top: 16px;
+      }
       #saved {
         font-size: 24px;
         color: var(--ink);
       }
     </style>
+    <!-- nou-theme:start -->
     <script>
-      try {
-        var p = JSON.parse(localStorage.getItem("nou-theme") || '"auto"'),
-          c = JSON.parse(localStorage.getItem("nou-theme-context") || "null"),
-          n = Date.now(),
-          h = new Date().getHours(),
-          d = c ? n >= c.sunrise && n < c.sunset : h >= 7 && h < 19;
-        if (p === "dark" || (p === "auto" && !d)) {
-          document.documentElement.dataset.theme = "dark";
-          document.querySelector('meta[name="theme-color"]').content = "#141614";
-        }
-      } catch (e) {}
+      (function bootstrapTheme(resolve, colors) {
+        let preference = "auto";
+        let context = null;
+        try {
+          preference = JSON.parse(localStorage.getItem("nou-theme") || '"auto"');
+          context = JSON.parse(localStorage.getItem("nou-theme-context") || "null");
+        } catch {}
+        const appearance = resolve(
+          preference,
+          context,
+          Date.now(),
+          window.matchMedia("(prefers-color-scheme: dark)").matches,
+        );
+        const root = document.documentElement;
+        root.dataset.theme = appearance;
+        root.style.colorScheme = appearance;
+        root.style.backgroundColor = colors[appearance];
+        document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+          meta.setAttribute("content", colors[appearance]);
+        });
+        document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", appearance);
+        document
+          .querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
+          ?.setAttribute("content", appearance === "dark" ? "black-translucent" : "default");
+        const manifest = document.querySelector('link[rel="manifest"]');
+        manifest?.setAttribute("href", `/api/manifest?theme=${appearance}`);
+      })(
+        function resolveTheme(preference, context, now, systemDark) {
+          if (preference === "light" || preference === "dark") return preference;
+          if (preference === "system") return systemDark ? "dark" : "light";
+          if (
+            context &&
+            Number.isFinite(context.sunrise) &&
+            Number.isFinite(context.sunset) &&
+            context.sunrise > 0 &&
+            context.sunset > context.sunrise &&
+            now >= context.sunrise - 432e5 &&
+            now < context.sunset + 432e5
+          ) {
+            return now >= context.sunrise && now < context.sunset ? "light" : "dark";
+          }
+          if (
+            context &&
+            typeof context.isDay === "boolean" &&
+            Number.isFinite(context.observedAt) &&
+            Math.abs(now - context.observedAt) < 216e5 &&
+            !(context.sunrise > 0 && context.sunset > context.sunrise)
+          ) {
+            return context.isDay ? "light" : "dark";
+          }
+          try {
+            const hour = context?.timezone
+              ? Number(
+                  new Intl.DateTimeFormat("en-GB", {
+                    timeZone: context.timezone,
+                    hour: "numeric",
+                    hourCycle: "h23",
+                  }).format(now),
+                )
+              : new Date(now).getHours();
+            return hour >= 7 && hour < 19 ? "light" : "dark";
+          } catch {
+            return systemDark ? "dark" : "light";
+          }
+        },
+        { light: "#f5f4ef", dark: "#141614" },
+      );
     </script>
+    <!-- nou-theme:end -->
   </head>
   <body>
     <main>
@@ -97,6 +167,7 @@
       <p id="saved"></p>
       <p id="updated"></p>
       <button onclick="location.reload()">Try again</button>
+      <a href="/">Back to today</a>
     </main>
     <script>
       try {

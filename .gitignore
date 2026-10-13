@@ -11,3 +11,4 @@ playwright-report
 public/vendor/voice-runtime
 public/voices/styles
 node_modules/.cache
+public/sw-assets.js

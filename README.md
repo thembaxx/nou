@@ -22,6 +22,7 @@ pnpm start
 
 - Live local clock and current weather with an explicit provider update timestamp. Weather refreshes every five minutes, on reconnect, and when returning to the app.
 - The automatic theme follows the selected location’s sunrise and sunset. Light and dark overrides persist on the device. The page, loading states, offline screen, browser chrome, and manifest share the same palette.
+- **Device** appearance follows the operating system, including changes while Nou is open. Startup and offline pages resolve the saved appearance before hydration; stale daylight readings use the selected timezone.
 - Weather-responsive, physically lit 3D cloud, sun, moon, rain, and snow sculptures. Pointer interaction, reduced-motion support, and an SVG fallback for devices without WebGL.
 - Only today’s remaining hours, temperature and rain charts, wind, humidity, UV, daylight, visibility, pressure, and air quality.
 - Real city search, optional device geolocation, saved places, Celsius/Fahrenheit, native sharing, browser Back/Forward navigation, and home screen shortcuts.
@@ -44,7 +45,17 @@ Preferences, places, and last readings are stored locally on the user’s device
 
 Import `thembaxx/nou` into Vercel, select Next.js and Node 24, and use `pnpm install --frozen-lockfile` with `pnpm build`. No environment variables are required for the public non-commercial data endpoints.
 
-`pnpm assets` regenerates the logo icons and social card. `pnpm test:e2e` runs browser integration checks against an app started at `http://localhost:3000` (or `BASE_URL`). Run `pnpm exec playwright install chromium` first.
+`pnpm assets` regenerates the logo icons and social card. `pnpm test:e2e` runs browser integration checks against an app started at `http://localhost:3000` (or `BASE_URL`). Run `pnpm exec playwright install --with-deps chromium webkit` first. PWA checks use desktop/mobile Chromium and mobile WebKit; test offline behavior against `pnpm build` followed by `pnpm start`.
+
+## PWA lifecycle
+
+`pnpm build` also generates `/sw-assets.js` from the finished Next.js build. It pins all JavaScript and CSS, including lazy-loaded views, to the deployment. Always run the full build command before serving production. Development does not register a service worker.
+
+The worker precaches the app assets, font, icons, voice previews, themed manifests, and offline fallback. After activation, it saves the home and About pages. Offline shortcuts retain their requested view; uncached routes show the offline page instead of silently returning home-page HTML. React Server Component requests are never answered with cached HTML. Navigation prefers the network, falling back to a saved page after five seconds on a stalled connection. Weather falls back to saved responses with an explicit saved-reading label, then refreshes on reconnect.
+
+Updates wait until **Update Nou** is chosen or existing app windows close. One previous deployment’s static cache is retained for other open tabs; page and weather caches are limited to 8 and 15 entries. Explicit voice downloads and generated audio survive app updates. Home screen installation requests persistent storage where supported; browsers can still evict offline data.
+
+Installation instructions adapt to iPhone/iPad, Android, and desktop. Standalone detection includes iOS home screen launches. Supported browsers reuse the existing app window when launching a shortcut. Browser chrome, page backgrounds, and manifest launch colors follow the chosen appearance. Installed splash screens and iOS status-bar updates are controlled by the browser and operating system and may retain launch-time settings. Live weather and uncached map tiles require a connection.
 
 ## Identity and discovery
 

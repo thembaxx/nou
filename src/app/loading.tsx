@@ -2,7 +2,11 @@ import { NouMark, NouWordmark } from "@/components/brand-mark";
 
 export default function Loading() {
   return (
-    <main className="initial-state" style={{ minHeight: "100dvh", justifyContent: "center" }}>
+    <main
+      id="main-content"
+      className="initial-state"
+      style={{ minHeight: "100dvh", justifyContent: "center" }}
+    >
       <NouMark className="initial-logo" size={46} />
       <h2 aria-label="Nou">
         <NouWordmark />

@@ -24,6 +24,8 @@ import {
   ForecastScrubber,
 } from "./interactions";
 import { BRAND } from "@/lib/brand";
+import { usePwa } from "./pwa-provider";
+import { applyTheme, resolveTheme, weatherThemeContext, type ThemeContext } from "@/lib/theme";
 import { IOS_SPRING, IOS_SHEET_SPRING, IOS_PRESS } from "@/lib/ios-motion";
 import {
   ArrowDownIcon,
@@ -105,6 +107,7 @@ const WeatherMap = dynamic(() => import("./weather-map"), {
 type Tab = "today" | "map" | "places";
 type Sheet =
   | "search"
+  | "install"
   | "settings"
   | "voice"
   | "summary"
@@ -115,10 +118,6 @@ type Sheet =
   | "daylight"
   | "about"
   | null;
-type InstallPrompt = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: string }>;
-};
 const storage = {
   get(key: string) {
     try {
@@ -437,6 +436,7 @@ function DaylightDial({ weather, now }: { weather: Weather; now: number }) {
 
 export default function NouApp({ initialWeather }: { initialWeather: Weather | null }) {
   const voice = useVoice();
+  const pwa = usePwa();
   const stopVoice = voice.stop;
   const [onboarding, setOnboarding] = useState(false);
   const rerunPending = useRef(false);
@@ -466,8 +466,9 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
   const [toast, setToast] = useState("");
   const [forecastMode, setForecastMode] = useState<"temperature" | "rain">("temperature");
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
-  const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null);
-  const [installed, setInstalled] = useState(false);
+  const [systemDark, setSystemDark] = useState(false);
+  const [startupTheme, setStartupTheme] = useState<"light" | "dark">("light");
+  const [savedThemeContext, setSavedThemeContext] = useState<ThemeContext | null>(null);
   const reduced = !!useReducedMotion();
   const controller = useRef<AbortController | null>(null);
   const placeRef = useRef(place);
@@ -484,7 +485,15 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
   const daylight = weather ? isDaylight(weather, now || weather.fetchedAt) : true;
-  const dark = theme === "auto" ? !daylight : theme === "dark";
+  const appearance = ready
+    ? resolveTheme(
+        theme,
+        weather ? weatherThemeContext(weather) : savedThemeContext,
+        now,
+        systemDark,
+      )
+    : startupTheme;
+  const dark = appearance === "dark";
   const isSaved = saved.some((p) => p.id === place.id);
 
   const loadWeather = useCallback(async (target: Place, silent = false) => {
@@ -500,6 +509,8 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
       const data = await response.json();
       if (!response.ok || !validWeather(data))
         throw new Error(data.error ?? "Weather couldn't load. Try again.");
+      const savedReading = response.headers.get("X-Nou-Saved-Reading") === "1";
+      if (savedReading) setError("Showing your saved reading. Live weather couldn’t refresh.");
       setWeather(data);
       setPlace(target);
       placeRef.current = target;
@@ -507,7 +518,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
       storage.set("nou-place", target);
       storage.set(`nou-weather-${target.id}`, data);
       setSheet((current) => (current === "search" ? null : current));
-      return true;
+      return !savedReading;
     } catch (e) {
       if (ctrl.signal.aborted) return false;
       const cached = storage.get(`nou-weather-${target.id}`);
@@ -598,6 +609,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
   }, [sheet, quietMoment, onboarding, shortcuts, tab, navigate, refreshMoment]);
 
   useEffect(() => {
+    setStartupTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
     setReady(true);
     setOnboarding(storage.get("nou-onboarding-v1") !== true);
     setNow(Date.now());
@@ -612,14 +624,25 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
       storedSaved = storage.get("nou-saved"),
       storedUnit = storage.get("nou-unit"),
       storedTheme = storage.get("nou-theme");
+    const context = storage.get("nou-theme-context");
+    if (context && typeof context === "object") setSavedThemeContext(context);
     if (Array.isArray(storedSaved)) setSaved(storedSaved.filter(validPlace));
     if (storedUnit === "c" || storedUnit === "f") setUnit(storedUnit);
     if (storage.get("nou-shortcuts") === false) setShortcuts(false);
-    if (["auto", "light", "dark"].includes(storedTheme)) setTheme(storedTheme);
-    if (validPlace(storedPlace) && storedPlace.id !== LONDON.id) void loadWeather(storedPlace);
-    else if (!initialWeather || Date.now() - initialWeather.current.time * 1000 > 20 * 60000)
+    if (["auto", "system", "light", "dark"].includes(storedTheme)) setTheme(storedTheme);
+    const target = validPlace(storedPlace) ? storedPlace : LONDON;
+    const cached = storage.get(`nou-weather-${target.id}`);
+    if (validWeather(cached) && (!navigator.onLine || target.id !== LONDON.id)) {
+      setWeather(cached);
+      setPlace(target);
+      placeRef.current = target;
+    }
+    if (target.id !== LONDON.id) {
+      if (!validWeather(cached)) setWeather(null);
+      void loadWeather(target);
+    } else if (!initialWeather || Date.now() - initialWeather.current.time * 1000 > 20 * 60000)
       void loadWeather(LONDON);
-    else storage.set(`nou-weather-${LONDON.id}`, initialWeather);
+    else if (navigator.onLine) storage.set(`nou-weather-${LONDON.id}`, initialWeather);
     const clock = setInterval(() => setNow(Date.now()), 1000);
     const refresh = setInterval(() => {
       if (navigator.onLine && document.visibilityState === "visible")
@@ -636,51 +659,9 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
         void loadWeather(placeRef.current, true);
       }
     };
-    const prompt = (e: Event) => {
-      e.preventDefault();
-      setInstallPrompt(e as InstallPrompt);
-    };
-    const install = () => {
-      setInstalled(true);
-      setInstallPrompt(null);
-    };
-    setInstalled(window.matchMedia("(display-mode: standalone)").matches);
     window.addEventListener("online", online);
     window.addEventListener("offline", offlineEvent);
-    window.addEventListener("beforeinstallprompt", prompt);
-    window.addEventListener("appinstalled", install);
     document.addEventListener("visibilitychange", visible);
-    if ("serviceWorker" in navigator)
-      void navigator.serviceWorker
-        .register("/sw.js")
-        .then(() => navigator.serviceWorker.ready)
-        .then((registration) => {
-          registration.active?.postMessage({ type: "CACHE_PAGE" });
-          const resources = new Set([
-            ...Array.from(
-              document.querySelectorAll<HTMLScriptElement>("script[src]"),
-              (script) => script.src,
-            ),
-            ...Array.from(
-              document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'),
-              (link) => link.href,
-            ),
-            ...performance.getEntriesByType("resource").map((entry) => entry.name),
-          ]);
-          const assets = Array.from(resources).filter((value) => {
-            const url = new URL(value, location.origin);
-            return (
-              url.origin === location.origin &&
-              (url.pathname.startsWith("/_next/static/") ||
-                url.pathname.startsWith("/fonts/") ||
-                url.pathname.startsWith("/vendor/"))
-            );
-          });
-          registration.active?.postMessage({ type: "CACHE_ASSETS", assets });
-        })
-        .catch(() => {
-          /* The app remains usable when service workers are restricted. */
-        });
     return () => {
       clearInterval(clock);
       clearInterval(refresh);
@@ -688,30 +669,34 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
       window.removeEventListener("popstate", readView);
       window.removeEventListener("online", online);
       window.removeEventListener("offline", offlineEvent);
-      window.removeEventListener("beforeinstallprompt", prompt);
-      window.removeEventListener("appinstalled", install);
       document.removeEventListener("visibilitychange", visible);
     };
   }, [initialWeather, loadWeather]);
 
   useEffect(() => {
     if (!ready) return;
-    document.documentElement.dataset.theme = dark ? "dark" : "light";
-    document.documentElement.style.colorScheme = dark ? "dark" : "light";
-    const color = dark ? "#141614" : "#f5f4ef";
-    document
-      .querySelectorAll('meta[name="theme-color"]')
-      .forEach((meta) => meta.setAttribute("content", color));
-    const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
-    if (manifest) manifest.href = `/api/manifest?theme=${dark ? "dark" : "light"}`;
+    applyTheme(appearance);
     storage.set("nou-theme", theme);
-    if (weather)
-      storage.set("nou-theme-context", {
-        sunrise: weather.daily.sunrise[0] * 1000,
-        sunset: weather.daily.sunset[0] * 1000,
-        timezone: weather.timezone,
-      });
-  }, [dark, ready, theme, weather]);
+    if (weather) storage.set("nou-theme-context", weatherThemeContext(weather));
+  }, [appearance, ready, theme, weather]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const changed = () => setSystemDark(media.matches);
+    const stored = (event: StorageEvent) => {
+      if (event.key === "nou-theme") {
+        const next = storage.get("nou-theme");
+        if (["auto", "system", "light", "dark"].includes(next)) setTheme(next);
+      }
+    };
+    changed();
+    media.addEventListener("change", changed);
+    window.addEventListener("storage", stored);
+    return () => {
+      media.removeEventListener("change", changed);
+      window.removeEventListener("storage", stored);
+    };
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -780,13 +765,9 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
   }
 
   async function installApp() {
-    if (installPrompt) {
-      await installPrompt.prompt();
-      const choice = await installPrompt.userChoice;
-      if (choice.outcome === "accepted") setInstalled(true);
-      setInstallPrompt(null);
-    } else
-      setToast("On iPhone: Share → Add to Home Screen. On Android: browser menu → Install app.");
+    const result = await pwa.install();
+    if (result === "manual") setSheet("install");
+    if (result === "error") setToast("Installation couldn’t open. Try your browser’s app menu.");
   }
 
   async function shareWeather() {
@@ -797,7 +778,8 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
       url: window.location.origin,
     };
     try {
-      if (navigator.share) await navigator.share(data);
+      if (navigator.share && (!navigator.canShare || navigator.canShare(data)))
+        await navigator.share(data);
       else {
         await navigator.clipboard.writeText(`${data.text} ${data.url}`);
         setToast("Today’s weather copied to your clipboard");
@@ -1512,21 +1494,23 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                   ? "Find your somewhere."
                   : sheet === "settings"
                     ? "Make it yours."
-                    : sheet === "voice"
-                      ? "A voice for your day."
-                      : sheet === "summary"
-                        ? "Your day, spoken."
-                        : sheet === "about"
-                          ? "A little about Nou."
-                          : sheet === "daylight"
-                            ? "A day in the light."
-                            : sheet === "air"
-                              ? "Take a breath."
-                              : sheet === "wind"
-                                ? "A little breeze."
-                                : sheet === "humidity"
-                                  ? "In the air today."
-                                  : "A little sunshine."
+                    : sheet === "install"
+                      ? "Keep today close."
+                      : sheet === "voice"
+                        ? "A voice for your day."
+                        : sheet === "summary"
+                          ? "Your day, spoken."
+                          : sheet === "about"
+                            ? "A little about Nou."
+                            : sheet === "daylight"
+                              ? "A day in the light."
+                              : sheet === "air"
+                                ? "Take a breath."
+                                : sheet === "wind"
+                                  ? "A little breeze."
+                                  : sheet === "humidity"
+                                    ? "In the air today."
+                                    : "A little sunshine."
               }
               close={close}
             >
@@ -1560,14 +1544,20 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                       </span>
                     </div>
                     <div className="segmented">
-                      {(["auto", "light", "dark"] as const).map((t) => (
+                      {(["auto", "system", "light", "dark"] as const).map((t) => (
                         <button
                           key={t}
                           aria-pressed={theme === t}
                           className={theme === t ? "selected" : ""}
                           onClick={() => setTheme(t)}
                         >
-                          {t === "auto" ? "Daylight" : t === "light" ? "Light" : "Dark"}
+                          {t === "auto"
+                            ? "Daylight"
+                            : t === "system"
+                              ? "Device"
+                              : t === "light"
+                                ? "Light"
+                                : "Dark"}
                         </button>
                       ))}
                     </div>
@@ -1646,18 +1636,18 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                   <button
                     className="settings-action"
                     onClick={() => void installApp()}
-                    disabled={installed}
+                    disabled={pwa.installed}
                   >
                     <DownloadSimpleIcon size={22} />
                     <span>
-                      {installed ? "Nou is on your home screen" : "A place on your home screen"}
+                      {pwa.installed ? "Nou is on your home screen" : "A place on your home screen"}
                       <small>
-                        {installed
+                        {pwa.installed
                           ? "Ready whenever you are"
                           : "Install Nou. Keep today a tap away."}
                       </small>
                     </span>
-                    {installed ? <CheckIcon size={20} /> : <ArrowUpRightIcon size={20} />}
+                    {pwa.installed ? <CheckIcon size={20} /> : <ArrowUpRightIcon size={20} />}
                   </button>
                   <button className="settings-action" onClick={() => void shareWeather()}>
                     <ShareNetworkIcon size={22} />
@@ -1686,6 +1676,55 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                     </p>
                   </div>
                 </>
+              )}
+              {sheet === "install" && (
+                <div className="install-guide">
+                  <p className="sheet-description">
+                    Nou opens in its own window, with your preferences and saved weather ready when
+                    you need them.
+                  </p>
+                  <ol>
+                    {pwa.platform === "ios" ? (
+                      <>
+                        <li>Open Nou in Safari and tap the browser’s Share button.</li>
+                        <li>
+                          Choose <strong>Add to Home Screen</strong>. You may need to scroll through
+                          the actions.
+                        </li>
+                        <li>
+                          Keep <strong>Open as Web App</strong> enabled if shown, then tap{" "}
+                          <strong>Add</strong>.
+                        </li>
+                      </>
+                    ) : pwa.platform === "android" ? (
+                      <>
+                        <li>Open your browser’s menu.</li>
+                        <li>
+                          Choose <strong>Install app</strong> or <strong>Add to Home screen</strong>
+                          .
+                        </li>
+                        <li>Confirm, then open Nou from your home screen.</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>
+                          In Chrome or Edge, choose the install icon in the address bar, or{" "}
+                          <strong>Install Nou</strong> from the browser menu.
+                        </li>
+                        <li>
+                          In Safari on Mac, choose <strong>File → Add to Dock</strong>.
+                        </li>
+                        <li>
+                          If your browser doesn’t offer installation, bookmark Nou to keep it close.
+                        </li>
+                      </>
+                    )}
+                  </ol>
+                  <p>
+                    Your last reading stays available offline. Fresh weather and map tiles need a
+                    connection.
+                  </p>
+                </div>
               )}
               {sheet === "voice" && (
                 <>
@@ -1770,6 +1809,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
               {weather &&
                 sheet !== "search" &&
                 sheet !== "settings" &&
+                sheet !== "install" &&
                 sheet !== "about" &&
                 sheet !== "voice" &&
                 sheet !== "summary" && (
