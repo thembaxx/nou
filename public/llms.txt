@@ -10,6 +10,8 @@ The canonical website is https://nou-six.vercel.app/. Nou means “now” in Afr
 - Readings saved offline can be stale. An offline or stale-reading notice and update time distinguish them from refreshed data.
 - London is the initial location. It does not imply that the visitor is in London. Device location is requested only when the visitor chooses it.
 
+A first-visit welcome tour introduces voice choice and motion previews and can be replayed in settings. Four AI voices can be previewed and downloaded for local, offline speech. Listen to today reads a factual weather summary on the device and offers a WAV audio download. The first voice uses a shared engine of approximately 110 MB.
+
 Saved places and preferences are stored locally in the browser. Map tiles and fresh weather require network access. Data coverage, refresh intervals, and PWA installation behavior depend on providers and browsers.
 
 ## Pages
@@ -24,6 +26,8 @@ Saved places and preferences are stored locally in the browser. Map tiles and fr
 - [Open-Meteo](https://open-meteo.com/): Weather, place search, and CAMS air quality estimates.
 - [OpenStreetMap](https://www.openstreetmap.org/copyright): Map data and tiles; Nominatim provides reverse geocoding.
 - [RainViewer](https://www.rainviewer.com/): Latest available precipitation radar with its frame timestamp.
+
+- [Kokoro](https://github.com/hexgrad/kokoro): Open speech model and browser implementation; model weights use Apache-2.0.
 
 ## Optional
 

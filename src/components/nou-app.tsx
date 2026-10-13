@@ -12,6 +12,10 @@ import {
 } from "motion/react";
 import { NouMark, NouWordmark } from "./brand-mark";
 import QuietMoment from "./quiet-moment";
+import Onboarding from "./onboarding";
+import { VoicePicker, DailyVoice } from "./voice-controls";
+import { useVoice } from "@/lib/use-voice";
+import { dailyNarration, summaryFilename, voiceById } from "@/lib/voice";
 import {
   GestureMain,
   TactileCard,
@@ -41,6 +45,8 @@ import {
   InfoIcon,
   LeafIcon,
   KeyboardIcon,
+  SpeakerHighIcon,
+  PlayIcon,
   LightningIcon,
   MapPinIcon,
   MapTrifoldIcon,
@@ -100,6 +106,8 @@ type Tab = "today" | "map" | "places";
 type Sheet =
   | "search"
   | "settings"
+  | "voice"
+  | "summary"
   | "wind"
   | "humidity"
   | "uv"
@@ -181,8 +189,9 @@ function SheetDialog({
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const target =
-      dialog.current?.querySelector<HTMLElement>("input") ??
-      dialog.current?.querySelector<HTMLElement>('button[aria-label="Close dialog"]');
+      dialog.current?.querySelector<HTMLElement>(
+        'input:not([type="radio"]),input[type="radio"]:checked',
+      ) ?? dialog.current?.querySelector<HTMLElement>('button[aria-label="Close dialog"]');
     target?.focus();
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") close();
@@ -209,7 +218,7 @@ function SheetDialog({
       window.removeEventListener("keydown", onKey);
       previous?.focus();
     };
-  }, [close]);
+  }, [close, title]);
   return (
     <motion.div
       className="sheet-backdrop"
@@ -427,6 +436,16 @@ function DaylightDial({ weather, now }: { weather: Weather; now: number }) {
 }
 
 export default function NouApp({ initialWeather }: { initialWeather: Weather | null }) {
+  const voice = useVoice();
+  const stopVoice = voice.stop;
+  const [onboarding, setOnboarding] = useState(false);
+  const rerunPending = useRef(false);
+  const [summary, setSummary] = useState({ text: "", filename: "" });
+  const completeOnboarding = useCallback(() => {
+    stopVoice();
+    storage.set("nou-onboarding-v1", true);
+    setOnboarding(false);
+  }, [stopVoice]);
   const [weather, setWeather] = useState(initialWeather);
   const [place, setPlace] = useState<Place>(LONDON);
   const [saved, setSaved] = useState<Place[]>([]);
@@ -452,7 +471,10 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
   const reduced = !!useReducedMotion();
   const controller = useRef<AbortController | null>(null);
   const placeRef = useRef(place);
-  const close = useCallback(() => setSheet(null), []);
+  const close = useCallback(() => {
+    stopVoice();
+    setSheet(null);
+  }, [stopVoice]);
   const navigate = useCallback((next: Tab) => {
     setTab(next);
     const url = new URL(window.location.href);
@@ -532,6 +554,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
         event.isComposing ||
         sheet ||
         quietMoment ||
+        onboarding ||
         event.ctrlKey ||
         event.metaKey ||
         event.altKey ||
@@ -572,10 +595,11 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
     };
     window.addEventListener("keydown", keys);
     return () => window.removeEventListener("keydown", keys);
-  }, [sheet, quietMoment, shortcuts, tab, navigate, refreshMoment]);
+  }, [sheet, quietMoment, onboarding, shortcuts, tab, navigate, refreshMoment]);
 
   useEffect(() => {
     setReady(true);
+    setOnboarding(storage.get("nou-onboarding-v1") !== true);
     setNow(Date.now());
     setOffline(!navigator.onLine);
     const readView = () => {
@@ -736,6 +760,14 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
     );
   }, [loadWeather]);
 
+  function listenToToday() {
+    if (!weather) return;
+    const text = dailyNarration(weather, place, unit, Date.now(), offline);
+    setSummary({ text, filename: summaryFilename(place, weather, voice.selected) });
+    setSheet("summary");
+    void voice.summarize(text);
+  }
+
   function savePlace() {
     const next = isSaved ? saved.filter((p) => p.id !== place.id) : [...saved, place];
     setSaved(next);
@@ -801,8 +833,8 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="app-shell" data-ready={ready} data-sheet-open={!!sheet}>
-        <aside className="sidebar">
+      <div className="app-shell" data-ready={ready} data-sheet-open={!!sheet || onboarding}>
+        <aside className="sidebar" inert={onboarding}>
           <a className="brand" href="/" aria-label="Nou home" onClick={touchBrand}>
             <NouMark />
             <NouWordmark />
@@ -854,8 +886,9 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
           view={tab}
           onNavigate={navigate}
           onRefresh={refreshMoment}
-          disabled={!!sheet || quietMoment || !ready}
+          disabled={!!sheet || quietMoment || onboarding || !ready}
           busy={loading}
+          inert={onboarding}
         >
           <header className="topbar">
             <a className="brand mobile-brand" href="/" aria-label="Nou home" onClick={touchBrand}>
@@ -1030,13 +1063,28 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                             <Sky
                               code={weather.current.weather_code}
                               night={!daylight}
-                              reduced={reduced}
+                              reduced={reduced || onboarding || !!sheet}
                             />
                             <span className="sky-hint">
                               <SparkleIcon size={12} /> Drag or double tap the sky
                             </span>
                           </div>
                         </div>
+                        <button className="day-voice-button" onClick={listenToToday}>
+                          <span className="day-voice-icon">
+                            <SpeakerHighIcon size={18} />
+                          </span>
+                          <span>
+                            <strong>Listen to today</strong>
+                            <small>
+                              {voiceById(voice.selected).name} ·{" "}
+                              {voice.installed.includes(voice.selected)
+                                ? "Ready offline"
+                                : "First listen ~110 MB"}
+                            </small>
+                          </span>
+                          <PlayIcon size={17} weight="fill" />
+                        </button>
                         <div className="hero-bottom">
                           <span>
                             <span className="live-dot" />
@@ -1411,7 +1459,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
           </footer>
         </GestureMain>
 
-        <nav className="mobile-nav" aria-label="Main navigation">
+        <nav className="mobile-nav" aria-label="Main navigation" inert={onboarding}>
           {(
             [
               { id: "today", label: "Today", icon: SunIcon },
@@ -1449,7 +1497,14 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
           </motion.button>
         </nav>
 
-        <AnimatePresence>
+        <AnimatePresence
+          onExitComplete={() => {
+            if (rerunPending.current) {
+              rerunPending.current = false;
+              setOnboarding(true);
+            }
+          }}
+        >
           {sheet && (
             <SheetDialog
               title={
@@ -1457,17 +1512,21 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                   ? "Find your somewhere."
                   : sheet === "settings"
                     ? "Make it yours."
-                    : sheet === "about"
-                      ? "A little about Nou."
-                      : sheet === "daylight"
-                        ? "A day in the light."
-                        : sheet === "air"
-                          ? "Take a breath."
-                          : sheet === "wind"
-                            ? "A little breeze."
-                            : sheet === "humidity"
-                              ? "In the air today."
-                              : "A little sunshine."
+                    : sheet === "voice"
+                      ? "A voice for your day."
+                      : sheet === "summary"
+                        ? "Your day, spoken."
+                        : sheet === "about"
+                          ? "A little about Nou."
+                          : sheet === "daylight"
+                            ? "A day in the light."
+                            : sheet === "air"
+                              ? "Take a breath."
+                              : sheet === "wind"
+                                ? "A little breeze."
+                                : sheet === "humidity"
+                                  ? "In the air today."
+                                  : "A little sunshine."
               }
               close={close}
             >
@@ -1557,6 +1616,33 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                       <span />
                     </button>
                   </div>
+                  <button className="settings-action" onClick={() => setSheet("voice")}>
+                    <SpeakerHighIcon size={22} />
+                    <span>
+                      Voice & downloads
+                      <small>
+                        {voiceById(voice.selected).name} ·{" "}
+                        {voice.installed.includes(voice.selected)
+                          ? "Ready offline"
+                          : "Choose, preview, and download"}
+                      </small>
+                    </span>
+                    <ArrowUpRightIcon size={20} />
+                  </button>
+                  <button
+                    className="settings-action"
+                    onClick={() => {
+                      voice.stop();
+                      rerunPending.current = true;
+                      setSheet(null);
+                    }}
+                  >
+                    <SparkleIcon size={22} />
+                    <span>
+                      Replay the welcome tour<small>Your voice, your sky, your way</small>
+                    </span>
+                    <ArrowUpRightIcon size={20} />
+                  </button>
                   <button
                     className="settings-action"
                     onClick={() => void installApp()}
@@ -1601,6 +1687,43 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                   </div>
                 </>
               )}
+              {sheet === "voice" && (
+                <>
+                  <p className="sheet-description">
+                    A familiar voice for your weather. Preview freely, then download for offline
+                    listening.
+                  </p>
+                  <VoicePicker voice={voice} />
+                  {voice.installed.includes(voice.selected) && (
+                    <button
+                      className="remove-offline-voice"
+                      onClick={() => void voice.remove(voice.selected)}
+                      disabled={
+                        !!voice.downloading ||
+                        voice.phase === "generating" ||
+                        voice.phase === "preparing"
+                      }
+                    >
+                      Remove {voiceById(voice.selected).name} from this device
+                    </button>
+                  )}
+                  <p className="voice-privacy">
+                    These are AI voices. Speech is generated on this device. No microphone, account,
+                    or speech API is needed.
+                  </p>
+                </>
+              )}
+              {sheet === "summary" && (
+                <DailyVoice
+                  voice={voice}
+                  text={summary.text}
+                  filename={summary.filename}
+                  changeVoice={() => {
+                    voice.stop();
+                    setSheet("voice");
+                  }}
+                />
+              )}
               {sheet === "about" && (
                 <>
                   <div className="about-brand">
@@ -1644,10 +1767,39 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                   </Link>
                 </>
               )}
-              {weather && sheet !== "search" && sheet !== "settings" && sheet !== "about" && (
-                <MetricDetails kind={sheet} weather={weather} unit={unit} now={now} index={index} />
-              )}
+              {weather &&
+                sheet !== "search" &&
+                sheet !== "settings" &&
+                sheet !== "about" &&
+                sheet !== "voice" &&
+                sheet !== "summary" && (
+                  <MetricDetails
+                    kind={sheet}
+                    weather={weather}
+                    unit={unit}
+                    now={now}
+                    index={index}
+                  />
+                )}
             </SheetDialog>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {onboarding && (
+            <Onboarding
+              key="welcome"
+              voice={voice}
+              weather={weather}
+              place={place}
+              theme={theme}
+              unit={unit}
+              setTheme={setTheme}
+              setUnit={(next) => {
+                setUnit(next);
+                storage.set("nou-unit", next);
+              }}
+              complete={completeOnboarding}
+            />
           )}
         </AnimatePresence>
         <AnimatePresence>

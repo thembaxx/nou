@@ -45,6 +45,14 @@ Visitors can swipe between views and pull down at the top of the mobile page to 
 
 Outside text fields, / opens search and R requests a refresh. Keyboard shortcuts can be disabled in preferences. Typing now or tapping the Nou logo five times opens an optional 12-second breathing scene. This decorative scene does not represent weather data and has no audio. It can be closed immediately with its close controls or Escape.
 
+## Voice and onboarding
+
+On a first visit, a four-step tour introduces Nou, voice choice, an interactive animation preview, and appearance/temperature preferences. Completing or skipping the tour is remembered on that device. Preferences contains Replay the welcome tour. The voice picker is available in the tour and Preferences → Voice & downloads.
+
+Four AI voices are offered: Ember (Kokoro af_heart), Luna (af_nicole), Nova (af_bella), and Sage (bm_george). Previews are actual generated recordings. The homepage Listen to today button creates speech from the selected location's weather response, chosen units, model reading time, and daily forecast. It identifies offline and stale readings. The transcript remains visible, and generated audio can be saved as a WAV file.
+
+Kokoro-82M speech generation runs on the visitor's device in a Web Worker using ONNX WebAssembly. The first offline voice downloads a shared engine of approximately 110 MB; each additional voice style is approximately 0.5 MB. First Listen installs the same files if needed, with the size shown beforehand. Downloads are optional in onboarding, show progress, can be cancelled, and can be removed in settings. Offline speech requires an installed voice, retained browser caches, and a saved weather reading. The six most recent generated summaries are cached by exact text and voice for quick replay. Offline playback adds a recorded notice in the chosen voice identifying the last saved reading. Generation speed depends on device performance. No microphone, speech-service API key, or account is required. Weather text is not uploaded to a speech provider. Voice weights are downloaded from the pinned Apache-2.0 Kokoro ONNX model hosted on Hugging Face.
+
 ## Installation and offline use
 
 Nou is a progressive web app with a standalone display mode, home-screen icons, maskable icons, and shortcuts to Today, Map, and Places. Supporting browsers offer an install prompt. On iPhone, installation uses Safari's Share menu and Add to Home Screen.

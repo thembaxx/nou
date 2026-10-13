@@ -113,6 +113,17 @@ export default function About() {
           </p>
         </details>
         <details>
+          <summary>Can Nou read the day to me?</summary>
+          <p>
+            Choose Ember, Luna, Nova, or Sage in the welcome tour or voice settings. Listen to today
+            reads a summary of your actual weather on this device and lets you save WAV audio.
+            Download a voice for offline use: the shared engine is about 110 MB, with extra voices
+            about 0.5 MB each. These are AI voices powered by{" "}
+            <a href="https://github.com/hexgrad/kokoro">Kokoro</a>. No microphone or speech API is
+            needed. You can replay the welcome tour from settings.
+          </p>
+        </details>
+        <details>
           <summary>What happens to my location and preferences?</summary>
           <p>
             Saved places and preferences stay in your browser on this device. Location access is

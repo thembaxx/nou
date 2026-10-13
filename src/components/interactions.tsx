@@ -24,6 +24,7 @@ export function GestureMain({
   onRefresh,
   disabled,
   busy,
+  inert = false,
 }: {
   children: ReactNode;
   view: View;
@@ -31,6 +32,7 @@ export function GestureMain({
   onRefresh: () => Promise<unknown>;
   disabled: boolean;
   busy: boolean;
+  inert?: boolean;
 }) {
   const node = useRef<HTMLElement>(null);
   const latest = useRef({ view, onNavigate, onRefresh, disabled, busy });
@@ -147,6 +149,7 @@ export function GestureMain({
       ref={node}
       className="main-content gesture-main"
       id="main-content"
+      inert={inert}
       style={{ x: reduced ? 0 : x, y: reduced ? vertical : y }}
       data-gesture-phase={phase}
     >

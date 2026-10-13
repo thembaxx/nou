@@ -1,14 +1,14 @@
-const VERSION = "nou-v4";
+const VERSION = "nou-v5";
 const STATIC = `${VERSION}-static`;
 const PAGES = `${VERSION}-pages`;
 const API = `${VERSION}-data`;
-const PRECACHE = ["/offline.html", "/icon.svg", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png", "/manifest.webmanifest", "/fonts/manrope.woff2", "/api/manifest?theme=light", "/api/manifest?theme=dark"];
+const PRECACHE = ["/voices/notices/ember-offline.wav", "/voices/notices/luna-offline.wav", "/voices/notices/nova-offline.wav", "/voices/notices/sage-offline.wav", "/voices/previews/ember.mp3", "/voices/previews/luna.mp3", "/voices/previews/nova.mp3", "/voices/previews/sage.mp3", "/offline.html", "/icon.svg", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png", "/manifest.webmanifest", "/fonts/manrope.woff2", "/api/manifest?theme=light", "/api/manifest?theme=dark"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(STATIC).then(cache => cache.addAll(PRECACHE)).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith("nou-") && ![STATIC, PAGES, API].includes(key)).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => /^nou-v\d+-(static|pages|data)$/.test(key) && ![STATIC, PAGES, API].includes(key)).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
 self.addEventListener("message", event => {
   if (event.data?.type === "CACHE_ASSETS" && Array.isArray(event.data.assets)) {
@@ -47,7 +47,7 @@ self.addEventListener("fetch", event => {
     })());
   } else if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/vendor/") || url.pathname === "/api/manifest" || PRECACHE.includes(url.pathname)) {
     event.respondWith((async () => {
-      const cached = await caches.match(request); if (cached) return cached;
+      const cached = url.pathname.startsWith("/vendor/voice-runtime/") ? await (await caches.open("nou-voice-v1")).match(request) || await caches.match(request) : await caches.match(request); if (cached) return cached;
       const response = await fetch(request);
       if (response.ok) { const cache = await caches.open(STATIC); await cache.put(request, response.clone()); await limit(cache, 120); }
       return response;

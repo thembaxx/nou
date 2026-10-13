@@ -61,3 +61,17 @@ Swipe left or right on mobile to move between Today, Map, and Places. Pull down 
 The sky tilts with the pointer, turns with horizontal dragging, settles with momentum, and spins on a double tap, double click, or Enter. Metric cards follow the mouse softly; saving a place adds a small burst. Temperature changes use a short spring transition. The scene pauses rendering outside the viewport and while the page is hidden. Reduced motion disables decorative movement.
 
 Press `/` to search and `R` to refresh outside a text field. Keyboard shortcuts can be disabled in preferences. Type `now` or tap the Nou logo five times to discover a quiet 12-second breathing moment. Escape and the close controls return to the weather and restore focus. These interactions never alter the weather data.
+
+## Voice and first-visit onboarding
+
+The four-step welcome tour appears on a first visit and remembers completion or Skip on this device. **Preferences → Replay the welcome tour** opens it again. Voice previews and the interactive weather sculpture follow the attached pastel, pill-shaped, native interface references. The final step applies the app's existing appearance and temperature preferences.
+
+Choose **Ember** (Kokoro af_heart), **Luna** (af_nicole), **Nova** (af_bella), or **Sage** (bm_george) in onboarding or **Preferences → Voice & downloads**. The checked-in preview MP3s are actual Kokoro-generated recordings. The waveform reads the audio analyser, and preview playback is always initiated by a visitor.
+
+**Listen to today** reads a deterministic summary of the selected place's actual weather response, chosen units, model reading time, and remaining daily forecast. It identifies offline/stale readings. Speech runs locally in a dedicated Web Worker with Kokoro-82M, Transformers.js, and a ONNX WebAssembly runtime using up to two threads in browsers that support isolation. Weather text is never sent to a speech service. WAV audio can be saved after generation. A microphone and API credentials are not required.
+
+The first offline voice downloads a shared engine of approximately **110 MB**; additional styles are approximately **0.5 MB** each. These files are explicitly downloaded into persistent browser caches, separate from versioned PWA app caches. Download progress, cancellation, removal, pause/replay, errors, and a readable transcript are provided. The last six generated audio summaries are cached by their exact text and voice. Offline replay prefixes a real recording in that same voice identifying the saved reading. Browser storage eviction can remove downloaded voices or audio. Audio generation time depends on the device. First Listen performs the same setup when the chosen voice is not already downloaded; its size is shown on the homepage button.
+
+`pnpm voice:runtime` builds the browser worker, copies the matching WASM runtime and voice styles from installed packages, and copies the Apache license. It also runs before `pnpm dev` and `pnpm build`. Generated runtime binaries are ignored by Git. Model weights are downloaded from the pinned Hugging Face revision `1939ad2a8e416c0acfeecc08a694d14ef25f2231`. `pnpm voice:previews` generates source WAV recordings in `/tmp/nou-voice-previews`; the checked-in MP3s are compressed with FFmpeg.
+
+Kokoro and its model weights are Apache-2.0 licensed. [Kokoro](https://github.com/hexgrad/kokoro) · [Pinned ONNX model](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX). The branded names identify synthetic voices, not real individuals.

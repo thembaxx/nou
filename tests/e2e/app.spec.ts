@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "./fixture";
+import type { Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 async function openApp(page: Page) {
   await page.goto("/", { waitUntil: "domcontentloaded" });
@@ -93,7 +94,7 @@ test("PWA reloads offline with saved weather and bounded caches", async ({
   await page.evaluate(() => navigator.serviceWorker.ready);
   await expect
     .poll(() =>
-      page.evaluate(async () => (await caches.open("nou-v4-pages")).match("/").then(Boolean)),
+      page.evaluate(async () => (await caches.open("nou-v5-pages")).match("/").then(Boolean)),
     )
     .toBe(true);
   const manifest = await (await request.get("/api/manifest?theme=dark")).json();

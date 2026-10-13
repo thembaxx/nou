@@ -7,3 +7,7 @@ node_modules
 test-results
 playwright-report
 .DS_Store
+
+public/vendor/voice-runtime
+public/voices/styles
+node_modules/.cache

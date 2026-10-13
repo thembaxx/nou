@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "./fixture";
+import type { Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 async function openApp(page: Page) {
