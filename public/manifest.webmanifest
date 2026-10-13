@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Nou · Weather for now.",
   "short_name": "Nou",
-  "description": "The weather that matters. The day you’re in.",
+  "description": "Stay in the present with Nou. See current weather, today’s hourly forecast, air quality and rain radar in a calm, beautifully simple weather app.",
   "lang": "en",
   "start_url": "/",
   "scope": "/",
@@ -12,6 +12,7 @@
   "theme_color": "#f5f4ef",
   "orientation": "any",
   "categories": ["weather", "lifestyle"],
+  "launch_handler": { "client_mode": "navigate-existing" },
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
@@ -27,19 +28,19 @@
       "name": "Today’s weather",
       "short_name": "Today",
       "url": "/",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Weather map",
       "short_name": "Map",
       "url": "/?view=map",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Saved places",
       "short_name": "Places",
       "url": "/?view=places",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

@@ -275,14 +275,20 @@ export default function Onboarding({
                       </span>
                     </div>
                     <div className="segmented">
-                      {(["auto", "light", "dark"] as const).map((item) => (
+                      {(["auto", "system", "light", "dark"] as const).map((item) => (
                         <button
                           key={item}
                           className={theme === item ? "selected" : ""}
                           aria-pressed={theme === item}
                           onClick={() => setTheme(item)}
                         >
-                          {item === "auto" ? "Daylight" : item === "light" ? "Light" : "Dark"}
+                          {item === "auto"
+                            ? "Daylight"
+                            : item === "system"
+                              ? "Device"
+                              : item === "light"
+                                ? "Light"
+                                : "Dark"}
                         </button>
                       ))}
                     </div>

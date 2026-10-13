@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { absoluteUrl, BRAND } from "@/lib/brand";
+import { THEME_BOOTSTRAP } from "@/lib/theme";
+import { PwaProvider } from "@/components/pwa-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -65,8 +67,6 @@ export const viewport: Viewport = {
   colorScheme: "light dark",
 };
 
-const themeScript = `(function(){try{var pref=JSON.parse(localStorage.getItem('nou-theme')||'"auto"'),ctx=JSON.parse(localStorage.getItem('nou-theme-context')||'null'),now=Date.now(),day;if(ctx&&now<ctx.sunset+43200000&&now>ctx.sunrise-43200000){day=now>=ctx.sunrise&&now<ctx.sunset}else{var hour=ctx&&ctx.timezone?Number(new Intl.DateTimeFormat('en-GB',{timeZone:ctx.timezone,hour:'numeric',hourCycle:'h23'}).format(now)):new Date().getHours();day=hour>=7&&hour<19}var dark=pref==='dark'||(pref==='auto'&&!day),color=dark?'#141614':'#f5f4ef';document.documentElement.dataset.theme=dark?'dark':'light';document.documentElement.style.colorScheme=dark?'dark':'light';document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=color})}catch(e){}})();`;
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -77,7 +77,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="/llms.txt"
           title="Nou information for AI assistants"
         />
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <style>{`html,body{background:#f5f4ef}html[data-theme="dark"],html[data-theme="dark"] body{background:#141614}`}</style>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
         <link
           rel="preload"
           href="/fonts/manrope.woff2"
@@ -90,7 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#main-content" className="skip-link">
           Skip to today’s weather
         </a>
-        {children}
+        <PwaProvider>{children}</PwaProvider>
       </body>
     </html>
   );

@@ -94,7 +94,10 @@ test("PWA reloads offline with saved weather and bounded caches", async ({
   await page.evaluate(() => navigator.serviceWorker.ready);
   await expect
     .poll(() =>
-      page.evaluate(async () => (await caches.open("nou-v5-pages")).match("/").then(Boolean)),
+      page.evaluate(async () => {
+        const name = (await caches.keys()).find((key) => /^nou-v6-.*-pages$/.test(key));
+        return name ? !!(await (await caches.open(name)).match("/")) : false;
+      }),
     )
     .toBe(true);
   const manifest = await (await request.get("/api/manifest?theme=dark")).json();

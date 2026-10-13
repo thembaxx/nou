@@ -76,7 +76,7 @@ export type Weather = {
 };
 
 export type Unit = "c" | "f";
-export type Theme = "auto" | "light" | "dark";
+export type Theme = "auto" | "system" | "light" | "dark";
 
 export function temperature(value: number, unit: Unit, precise = false) {
   const converted = unit === "f" ? (value * 9) / 5 + 32 : value;

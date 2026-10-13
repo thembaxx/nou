@@ -49,11 +49,14 @@
 }
 html {
   background: var(--bg);
+  min-height: 100%;
   scroll-behavior: smooth;
   scroll-padding-top: 24px;
 }
 body {
   margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--ink);
   font-family: Manrope, Arial, sans-serif;
@@ -163,14 +166,17 @@ svg {
   flex-shrink: 0;
 }
 .app-shell {
+  min-height: 100vh;
   min-height: 100dvh;
+  background: var(--bg);
 }
 .sidebar {
-  width: 230px;
+  width: calc(230px + env(safe-area-inset-left));
   position: fixed;
   inset: 0 auto 0 0;
   border-right: 1px solid var(--line);
-  padding: 40px 27px 23px;
+  padding: max(40px, env(safe-area-inset-top)) 27px max(23px, env(safe-area-inset-bottom))
+    calc(27px + env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
 }
@@ -289,8 +295,8 @@ svg {
   background: var(--muted);
 }
 .main-content {
-  margin-left: 230px;
-  padding: 30px 43px 24px;
+  margin-left: calc(230px + env(safe-area-inset-left));
+  padding: max(30px, env(safe-area-inset-top)) max(43px, env(safe-area-inset-right)) 24px 43px;
   max-width: 1600px;
 }
 .topbar {
@@ -1402,6 +1408,9 @@ svg {
 }
 .initial-state {
   padding: 80px 20px;
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+  background: var(--bg);
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -1825,13 +1834,13 @@ svg {
 }
 @media (min-width: 1600px) {
   .main-content {
-    margin-left: 260px;
-    padding: 35px 65px;
+    margin-left: calc(260px + env(safe-area-inset-left));
+    padding: max(35px, env(safe-area-inset-top)) max(65px, env(safe-area-inset-right)) 35px 65px;
     max-width: 1600px;
   }
   .sidebar {
-    width: 260px;
-    padding-left: 35px;
+    width: calc(260px + env(safe-area-inset-left));
+    padding-left: calc(35px + env(safe-area-inset-left));
     padding-right: 35px;
   }
   .hero-grid {
@@ -1870,12 +1879,13 @@ svg {
 }
 @media (max-width: 1200px) {
   .sidebar {
-    width: 200px;
-    padding: 34px 20px 22px;
+    width: calc(200px + env(safe-area-inset-left));
+    padding: max(34px, env(safe-area-inset-top)) 20px max(22px, env(safe-area-inset-bottom))
+      calc(20px + env(safe-area-inset-left));
   }
   .main-content {
-    margin-left: 200px;
-    padding: 26px 30px;
+    margin-left: calc(200px + env(safe-area-inset-left));
+    padding: max(26px, env(safe-area-inset-top)) max(30px, env(safe-area-inset-right)) 26px 30px;
   }
   .hero-grid {
     grid-template-columns: 1.6fr 1fr;
@@ -1940,8 +1950,9 @@ svg {
 }
 @media (max-width: 1000px) {
   .sidebar {
-    width: 175px;
-    padding: 30px 14px 20px;
+    width: calc(175px + env(safe-area-inset-left));
+    padding: max(30px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom))
+      calc(14px + env(safe-area-inset-left));
   }
   .sidebar .brand {
     margin-left: 10px;
@@ -1976,8 +1987,8 @@ svg {
     font-size: 8px;
   }
   .main-content {
-    margin-left: 175px;
-    padding: 24px;
+    margin-left: calc(175px + env(safe-area-inset-left));
+    padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) 24px 24px;
   }
   .page-heading h1 {
     font-size: 38px;
@@ -2123,6 +2134,9 @@ svg {
     margin-inline: auto;
     padding: 22px 23px 118px;
     padding-top: max(22px, env(safe-area-inset-top));
+    padding-left: max(23px, env(safe-area-inset-left));
+    padding-right: max(23px, env(safe-area-inset-right));
+    padding-bottom: calc(118px + env(safe-area-inset-bottom));
   }
   .topbar {
     padding-bottom: 20px;
@@ -2432,6 +2446,9 @@ svg {
   .main-content {
     padding: 21px 19px 115px;
     padding-top: max(21px, env(safe-area-inset-top));
+    padding-left: max(19px, env(safe-area-inset-left));
+    padding-right: max(19px, env(safe-area-inset-right));
+    padding-bottom: calc(115px + env(safe-area-inset-bottom));
   }
   .topbar {
     padding-bottom: 21px;
@@ -2961,7 +2978,8 @@ svg {
 .story-page {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 35px 44px 28px;
+  padding: max(35px, env(safe-area-inset-top)) max(44px, env(safe-area-inset-right))
+    max(28px, env(safe-area-inset-bottom)) max(44px, env(safe-area-inset-left));
 }
 .story-header {
   display: flex;
@@ -3179,6 +3197,9 @@ svg {
   .story-page {
     padding: 26px 24px 35px;
     padding-top: max(26px, env(safe-area-inset-top));
+    padding-left: max(24px, env(safe-area-inset-left));
+    padding-right: max(24px, env(safe-area-inset-right));
+    padding-bottom: calc(35px + env(safe-area-inset-bottom));
   }
   .story-header {
     padding-bottom: 20px;
@@ -4471,4 +4492,55 @@ progress::-moz-progress-bar {
   color: var(--muted);
   font-size: 10px;
   min-height: 25px;
+}
+
+.install-guide ol {
+  padding-left: 24px;
+  display: grid;
+  gap: 16px;
+  line-height: 1.8;
+}
+.install-guide > p:last-child {
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.pwa-update {
+  position: fixed;
+  z-index: 90;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 40px - env(safe-area-inset-left) - env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.pwa-update button {
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 24px;
+  background: var(--ink);
+  color: var(--bg);
+}
+.pwa-update button:last-child {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+@media (max-width: 760px) {
+  .pwa-update {
+    bottom: calc(100px + env(safe-area-inset-bottom));
+  }
+  .pwa-update p {
+    flex-basis: 100%;
+  }
 }

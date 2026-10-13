@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
+    "postbuild": "tsx scripts/build-pwa.ts",
     "start": "next start --hostname 0.0.0.0",
     "lint": "oxlint --deny-warnings",
     "format": "oxfmt --write .",
