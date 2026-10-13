@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode, type MouseEvent } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -11,6 +11,14 @@ import {
   useDragControls,
 } from "motion/react";
 import { NouMark, NouWordmark } from "./brand-mark";
+import QuietMoment from "./quiet-moment";
+import {
+  GestureMain,
+  TactileCard,
+  AnimatedReading,
+  SaveButton,
+  ForecastScrubber,
+} from "./interactions";
 import { BRAND } from "@/lib/brand";
 import { IOS_SPRING, IOS_SHEET_SPRING, IOS_PRESS } from "@/lib/ios-motion";
 import {
@@ -32,6 +40,7 @@ import {
   HeartIcon,
   InfoIcon,
   LeafIcon,
+  KeyboardIcon,
   LightningIcon,
   MapPinIcon,
   MapTrifoldIcon,
@@ -171,9 +180,9 @@ function SheetDialog({
     const previous = document.activeElement as HTMLElement;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const target = dialog.current?.querySelector<HTMLElement>(
-      'input,button[aria-label="Close dialog"]',
-    );
+    const target =
+      dialog.current?.querySelector<HTMLElement>("input") ??
+      dialog.current?.querySelector<HTMLElement>('button[aria-label="Close dialog"]');
     target?.focus();
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") close();
@@ -425,6 +434,10 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
   const [theme, setTheme] = useState<Theme>("auto");
   const [tab, setTab] = useState<Tab>("today");
   const [sheet, setSheet] = useState<Sheet>(null);
+  const [quietMoment, setQuietMoment] = useState(false);
+  const [shortcuts, setShortcuts] = useState(true);
+  const logoTaps = useRef({ count: 0, last: 0 });
+  const closeMoment = useCallback(() => setQuietMoment(false), []);
   const [now, setNow] = useState(initialWeather?.fetchedAt ?? 0);
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -445,7 +458,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
     const url = new URL(window.location.href);
     if (next === "today") url.searchParams.delete("view");
     else url.searchParams.set("view", next);
-    window.history.pushState({ view: next }, "", url);
+    if (url.href !== window.location.href) window.history.pushState({ view: next }, "", url);
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
   const daylight = weather ? isDaylight(weather, now || weather.fetchedAt) : true;
@@ -489,6 +502,78 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
     }
   }, []);
 
+  const refreshMoment = useCallback(async () => {
+    const refreshed = await loadWeather(placeRef.current);
+    if (refreshed) setToast("Your weather, freshly checked.");
+    return refreshed;
+  }, [loadWeather]);
+
+  function touchBrand(event: MouseEvent<HTMLAnchorElement>) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (tab !== "today") navigate("today");
+    if (event.detail === 0) return;
+    const time = performance.now();
+    logoTaps.current.count = time - logoTaps.current.last < 650 ? logoTaps.current.count + 1 : 1;
+    logoTaps.current.last = time;
+    if (logoTaps.current.count === 5) {
+      logoTaps.current.count = 0;
+      setQuietMoment(true);
+    }
+  }
+
+  useEffect(() => {
+    let letters = "",
+      lastKey = 0;
+    const keys = (event: KeyboardEvent) => {
+      const target = event.target as Element;
+      if (
+        !shortcuts ||
+        event.isComposing ||
+        sheet ||
+        quietMoment ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey ||
+        target.closest(
+          'input,textarea,select,[contenteditable="true"],[data-gesture-ignore],.sky-object,.map-shell',
+        )
+      )
+        return;
+      if (event.key === "/") {
+        event.preventDefault();
+        setSheet("search");
+        return;
+      }
+      if (event.key.toLowerCase() === "r" && !event.repeat) {
+        void refreshMoment();
+        return;
+      }
+      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        // Native form controls and navigation buttons keep their own key behavior.
+        if (target.closest("a,button")) return;
+        event.preventDefault();
+        const views: Tab[] = ["today", "map", "places"];
+        const next = views[views.indexOf(tab) + (event.key === "ArrowRight" ? 1 : -1)];
+        if (next) navigate(next);
+        return;
+      }
+      if (event.key.length !== 1 || event.repeat) return;
+      const time = performance.now();
+      letters =
+        time - lastKey < 1100
+          ? (letters + event.key.toLowerCase()).slice(-3)
+          : event.key.toLowerCase();
+      lastKey = time;
+      if (letters === "now") {
+        letters = "";
+        setQuietMoment(true);
+      }
+    };
+    window.addEventListener("keydown", keys);
+    return () => window.removeEventListener("keydown", keys);
+  }, [sheet, quietMoment, shortcuts, tab, navigate, refreshMoment]);
+
   useEffect(() => {
     setReady(true);
     setNow(Date.now());
@@ -505,6 +590,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
       storedTheme = storage.get("nou-theme");
     if (Array.isArray(storedSaved)) setSaved(storedSaved.filter(validPlace));
     if (storedUnit === "c" || storedUnit === "f") setUnit(storedUnit);
+    if (storage.get("nou-shortcuts") === false) setShortcuts(false);
     if (["auto", "light", "dark"].includes(storedTheme)) setTheme(storedTheme);
     if (validPlace(storedPlace) && storedPlace.id !== LONDON.id) void loadWeather(storedPlace);
     else if (!initialWeather || Date.now() - initialWeather.current.time * 1000 > 20 * 60000)
@@ -717,7 +803,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
     <MotionConfig reducedMotion="user">
       <div className="app-shell" data-ready={ready} data-sheet-open={!!sheet}>
         <aside className="sidebar">
-          <a className="brand" href="/" aria-label="Nou home">
+          <a className="brand" href="/" aria-label="Nou home" onClick={touchBrand}>
             <NouMark />
             <NouWordmark />
           </a>
@@ -764,9 +850,15 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
           </div>
         </aside>
 
-        <main className="main-content" id="main-content">
+        <GestureMain
+          view={tab}
+          onNavigate={navigate}
+          onRefresh={refreshMoment}
+          disabled={!!sheet || quietMoment || !ready}
+          busy={loading}
+        >
           <header className="topbar">
-            <a className="brand mobile-brand" href="/" aria-label="Nou home">
+            <a className="brand mobile-brand" href="/" aria-label="Nou home" onClick={touchBrand}>
               <NouMark size={26} />
               <NouWordmark />
             </a>
@@ -902,13 +994,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                           <span className="eyebrow">
                             <span className="live-dot" /> CURRENT WEATHER
                           </span>
-                          <button
-                            className={`icon-button save-button ${isSaved ? "saved" : ""}`}
-                            aria-label={isSaved ? "Unsave this place" : "Save this place"}
-                            onClick={savePlace}
-                          >
-                            <HeartIcon size={21} weight={isSaved ? "fill" : "regular"} />
-                          </button>
+                          <SaveButton saved={isSaved} onToggle={savePlace} />
                         </div>
                         <div className="hero-body">
                           <div className="hero-reading">
@@ -917,7 +1003,9 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                               <span>{place.country}</span>
                             </div>
                             <div className="temperature-value">
-                              {temperature(weather.current.temperature_2m, unit)}
+                              <AnimatedReading
+                                value={temperature(weather.current.temperature_2m, unit)}
+                              />
                               <span>°</span>
                             </div>
                             <p className="condition-label">
@@ -945,7 +1033,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                               reduced={reduced}
                             />
                             <span className="sky-hint">
-                              <SparkleIcon size={12} /> A sky you can play with
+                              <SparkleIcon size={12} /> Drag or double tap the sky
                             </span>
                           </div>
                         </div>
@@ -1029,7 +1117,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                           </button>
                         </div>
                       </div>
-                      <div className="hourly-scroll">
+                      <ForecastScrubber onScrub={setSelectedHour}>
                         <div className="hourly-chart">
                           {hours.map(({ time, i }, n) => {
                             const temp = weather.hourly.temperature_2m[i],
@@ -1045,6 +1133,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                             return (
                               <button
                                 key={time}
+                                data-hour-index={i}
                                 className={`hour-column ${activeIndex === i ? "selected" : ""}`}
                                 aria-label={`${n === 0 ? "Now" : localTime(time * 1000, weather.timezone)}: ${temperature(temp, unit)} degrees, ${rain}% chance of rain`}
                                 aria-pressed={activeIndex === i}
@@ -1084,7 +1173,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                             );
                           })}
                         </div>
-                      </div>
+                      </ForecastScrubber>
                       <div className="forecast-footnote">
                         <span>
                           {selectedHour === null
@@ -1102,7 +1191,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                       </span>
                     </div>
                     <div className="metrics-grid">
-                      <button
+                      <TactileCard
                         className="metric-card card wind-card"
                         onClick={() => setSheet("wind")}
                       >
@@ -1125,8 +1214,8 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                           {compass(weather.current.wind_direction_10m)} wind{" "}
                           <span>· Gusts {Math.round(weather.current.wind_gusts_10m)} km/h</span>
                         </p>
-                      </button>
-                      <button
+                      </TactileCard>
+                      <TactileCard
                         className="metric-card card humidity-card"
                         onClick={() => setSheet("humidity")}
                       >
@@ -1157,8 +1246,11 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                               ? "The air is feeling dry"
                               : "Comfortably balanced"}
                         </p>
-                      </button>
-                      <button className="metric-card card uv-card" onClick={() => setSheet("uv")}>
+                      </TactileCard>
+                      <TactileCard
+                        className="metric-card card uv-card"
+                        onClick={() => setSheet("uv")}
+                      >
                         <div className="metric-heading">
                           <span>
                             <SunIcon size={19} /> UV index
@@ -1177,7 +1269,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                         <p>
                           {uv < 3 ? "A gentle kind of sunshine" : "A little SPF goes a long way"}
                         </p>
-                      </button>
+                      </TactileCard>
                     </div>
 
                     <div className="bottom-grid">
@@ -1317,7 +1409,7 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
             </button>
             <span className="footer-message">No tomorrow. Just today.</span>
           </footer>
-        </main>
+        </GestureMain>
 
         <nav className="mobile-nav" aria-label="Main navigation">
           {(
@@ -1444,6 +1536,27 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                       ))}
                     </div>
                   </div>
+                  <div className="preference-row">
+                    <div>
+                      <KeyboardIcon size={22} />
+                      <span>
+                        Keyboard shortcuts<small>Search, refresh, and move between views</small>
+                      </span>
+                    </div>
+                    <button
+                      className="shortcut-toggle"
+                      role="switch"
+                      aria-label="Keyboard shortcuts"
+                      aria-checked={shortcuts}
+                      onClick={() => {
+                        const next = !shortcuts;
+                        setShortcuts(next);
+                        storage.set("nou-shortcuts", next);
+                      }}
+                    >
+                      <span />
+                    </button>
+                  </div>
                   <button
                     className="settings-action"
                     onClick={() => void installApp()}
@@ -1467,6 +1580,18 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                     </span>
                     <ArrowUpRightIcon size={20} />
                   </button>
+                  <div className="interaction-note">
+                    <SparkleIcon size={20} />
+                    <p>
+                      Swipe between views. Pull down to refresh. Drag the sky or double tap for a
+                      little spin.
+                      <small>
+                        {shortcuts
+                          ? "On a keyboard: / to search · R to refresh. A little secret lives in ‘now’."
+                          : "Keyboard shortcuts are off. There is still a little secret in the Nou logo."}
+                      </small>
+                    </p>
+                  </div>
                   <div className="theme-note">
                     <MoonIcon size={20} />
                     <p>
@@ -1524,6 +1649,9 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
               )}
             </SheetDialog>
           )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {quietMoment && <QuietMoment key="quiet-moment" close={closeMoment} />}
         </AnimatePresence>
         <AnimatePresence>
           {toast && (

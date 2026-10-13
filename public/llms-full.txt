@@ -41,6 +41,10 @@ The automatic theme follows sunrise and sunset at the selected location. Light a
 
 Mobile navigation uses icon-only Today, Map, Places, and Search controls with accessible names. Spring transitions move the active selection. Mobile sheets slide from the bottom and can be dismissed by dragging the handle downward, the close control, or Escape. Motion is reduced when the visitor's operating system requests reduced motion.
 
+Visitors can swipe between views and pull down at the top of the mobile page to refresh. The forecast supports mouse scrubbing and arrow-key selection. The weather sculpture responds to pointer tilt and dragging; a double tap, double click, or Enter makes it spin. Decorative movement is disabled with reduced-motion preferences. The 3D scene pauses when offscreen or the page is hidden.
+
+Outside text fields, / opens search and R requests a refresh. Keyboard shortcuts can be disabled in preferences. Typing now or tapping the Nou logo five times opens an optional 12-second breathing scene. This decorative scene does not represent weather data and has no audio. It can be closed immediately with its close controls or Escape.
+
 ## Installation and offline use
 
 Nou is a progressive web app with a standalone display mode, home-screen icons, maskable icons, and shortcuts to Today, Map, and Places. Supporting browsers offer an install prompt. On iPhone, installation uses Safari's Share menu and Add to Home Screen.

@@ -93,7 +93,7 @@ test("PWA reloads offline with saved weather and bounded caches", async ({
   await page.evaluate(() => navigator.serviceWorker.ready);
   await expect
     .poll(() =>
-      page.evaluate(async () => (await caches.open("nou-v3-pages")).match("/").then(Boolean)),
+      page.evaluate(async () => (await caches.open("nou-v4-pages")).match("/").then(Boolean)),
     )
     .toBe(true);
   const manifest = await (await request.get("/api/manifest?theme=dark")).json();
@@ -104,6 +104,11 @@ test("PWA reloads offline with saved weather and bounded caches", async ({
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator(".temperature-value")).toBeVisible();
   await expect(page.locator(".status-banner")).toContainText("offline");
+  await page.locator("h1").click();
+  await page.keyboard.type("now");
+  await expect(page.locator(".quiet-moment")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".quiet-moment")).toHaveCount(0);
   await context.setOffline(false);
 });
 

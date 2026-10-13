@@ -1,4 +1,4 @@
-const VERSION = "nou-v3";
+const VERSION = "nou-v4";
 const STATIC = `${VERSION}-static`;
 const PAGES = `${VERSION}-pages`;
 const API = `${VERSION}-data`;

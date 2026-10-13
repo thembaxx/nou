@@ -53,3 +53,11 @@ Nou means “now” in Afrikaans. Its tagline is **Weather for now.** The custom
 Search metadata uses the verified production origin `https://nou-six.vercel.app`, canonical URLs, Open Graph/Twitter previews, and factual Brand, WebSite, and WebApplication JSON-LD. `/about` provides visible, server-rendered product and data-source information. `/robots.txt` and `/sitemap.xml` identify the indexable pages. `/llms.txt` follows the proposed Markdown format; `/llms-full.txt` provides expanded factual context. `/LLM.txt` and `/llm.txt` redirect to `/llms.txt`.
 
 Mobile navigation is icon-only, retains accessible names, and uses a shared spring selection indicator. Mobile sheets slide from the bottom and support dragging the handle to dismiss. Spring timing, press feedback, and small page transitions follow iOS patterns and respect reduced-motion preferences.
+
+## Touch, pointer and little discoveries
+
+Swipe left or right on mobile to move between Today, Map, and Places. Pull down from the top of the page to request fresh weather. The map, interactive controls, chart, and sky retain their own gestures. Drag the hourly forecast with a mouse to scrub through readings; its focused hour buttons support arrow keys, Home, and End.
+
+The sky tilts with the pointer, turns with horizontal dragging, settles with momentum, and spins on a double tap, double click, or Enter. Metric cards follow the mouse softly; saving a place adds a small burst. Temperature changes use a short spring transition. The scene pauses rendering outside the viewport and while the page is hidden. Reduced motion disables decorative movement.
+
+Press `/` to search and `R` to refresh outside a text field. Keyboard shortcuts can be disabled in preferences. Type `now` or tap the Nou logo five times to discover a quiet 12-second breathing moment. Escape and the close controls return to the weather and restore focus. These interactions never alter the weather data.
