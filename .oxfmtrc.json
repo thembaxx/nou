@@ -1,0 +1,6 @@
+{
+  "semi": true,
+  "singleQuote": false,
+  "printWidth": 100,
+  "ignorePatterns": ["package-lock.json", "public/sw.js", "public/vendor"]
+}
