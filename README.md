@@ -1,5 +1,23 @@
 # Nou
 
+A current-day weather experience with location-aware timing and a visual, interactive interface.
+
+[Browse the source](https://github.com/thembaxx/nou)
+
+## Engineering highlights
+
+Explicit provider update timestamps, reconnect refresh, persisted theme overrides and on-demand visual tooling. Forecasts depend on upstream providers.
+
+## Technology
+
+Declared in [package.json](package.json): Next.js `^16.4.0` · React `^19.3.0` · TypeScript `^7.0.2` · Tailwind CSS `^4.3.3` · Three.js `^0.186.1` · Motion `^14.1.1` · React Three Fiber `^9.8.1` · MapLibre `^6.14.0` · Transformers.js `3.8.1`.
+
+**Quality tooling:** `lint`, `format:check`, `typecheck`, `test`, `test:e2e` scripts are available. See the setup guide below for prerequisites; this documentation pass does not assert that those checks were run.
+
+---
+
+## Project guide
+
 **Weather for now.** A weather app focused entirely on the current day, inspired by the attached ivory, pale blue, citron, and native iOS interface references.
 
 Next.js 16 App Router · React 19 · TypeScript · Tailwind CSS 4 · Motion · Three.js / React Three Fiber · Phosphor · MapLibre · oxfmt · oxlint. Dependencies are resolved in `pnpm-lock.yaml`; Node 24 and pnpm are required.
