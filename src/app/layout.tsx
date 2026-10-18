@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { absoluteUrl, BRAND } from "@/lib/brand";
 import { THEME_BOOTSTRAP } from "@/lib/theme";
 import { PwaProvider } from "@/components/pwa-provider";
@@ -92,6 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to today’s weather
         </a>
         <PwaProvider>{children}</PwaProvider>
+        <Analytics />
       </body>
     </html>
   );
