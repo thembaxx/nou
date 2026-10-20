@@ -70,7 +70,8 @@ async function prepare(id: number, voice: VoiceId) {
       }),
       AutoTokenizer.from_pretrained(MODEL_ID, { revision: MODEL_REVISION }),
     ]);
-    engine = new KokoroTTS(model, tokenizer);
+    // Transformers types the factory result as the base model, although this factory is the style-TTS subclass.
+    engine = new KokoroTTS(model as StyleTextToSpeech2Model, tokenizer);
   }
   const definition = voiceById(voice);
   const url = new URL(`/voices/styles/${definition.model}.bin`, self.location.origin).href;
