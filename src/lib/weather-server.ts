@@ -8,7 +8,7 @@ export async function getWeather(latitude: number, longitude: number): Promise<W
     current:
       "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m",
     hourly:
-      "temperature_2m,precipitation_probability,precipitation,weather_code,uv_index,visibility,relative_humidity_2m",
+      "temperature_2m,precipitation_probability,precipitation,weather_code,uv_index,visibility,relative_humidity_2m,wind_speed_10m",
     daily: "sunrise,sunset,temperature_2m_max,temperature_2m_min",
     timezone: "auto",
     forecast_days: "1",

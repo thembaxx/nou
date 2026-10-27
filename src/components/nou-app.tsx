@@ -1,4 +1,5 @@
 "use client";
+import { ActivityWindows } from "./activity-windows";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode, type MouseEvent } from "react";
 import dynamic from "next/dynamic";
@@ -1214,6 +1215,12 @@ export default function NouApp({ initialWeather }: { initialWeather: Weather | n
                       </div>
                     </section>
 
+                    <ActivityWindows
+                      weather={weather}
+                      now={now || weather.fetchedAt}
+                      offline={offline}
+                      stale={stale || !!error}
+                    />
                     <div className="details-heading">
                       <h2>A little more detail</h2>
                       <span>
