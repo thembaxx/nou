@@ -61,6 +61,7 @@ export type Weather = {
     precipitation: number[];
     weather_code: number[];
     uv_index: number[];
+    wind_speed_10m?: number[];
     visibility: number[];
     relative_humidity_2m: number[];
   };
