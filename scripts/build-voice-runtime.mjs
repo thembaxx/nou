@@ -18,6 +18,7 @@ await build({
   minify: true,
   legalComments: "eof",
   alias: {
+    "onnxruntime-web/webgpu": transformers.resolve("onnxruntime-web/wasm"),
     "onnxruntime-web": transformers.resolve("onnxruntime-web/wasm"),
     path: "./scripts/browser-empty.mjs",
     "fs/promises": "./scripts/browser-empty.mjs",

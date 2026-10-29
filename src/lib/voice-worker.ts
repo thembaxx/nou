@@ -121,7 +121,7 @@ self.onmessage = (event) => {
         for (let index = 0; index < sentences.length; index++) {
           self.postMessage({ kind: "generating", id, progress: index / sentences.length });
           const audio = await tts.generate(sentences[index], { voice: voiceById(voice).model });
-          chunks.push(audio.audio);
+          chunks.push(audio.data);
         }
         const samples = new Float32Array(chunks.reduce((size, chunk) => size + chunk.length, 0));
         let offset = 0;
