@@ -27,7 +27,7 @@
     "@tailwindcss/postcss": "^4.3.3",
     "@vercel/analytics": "^2.0.1",
     "kokoro-js": "^1.2.1",
-    "maplibre-gl": "^6.15.0",
+    "maplibre-gl": "^6.16.0",
     "motion": "^14.6.0",
     "next": "^16.4.3",
     "react": "^19.3.1",
