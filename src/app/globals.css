@@ -154,8 +154,10 @@ svg {
   background: var(--surface);
   flex-shrink: 0;
 }
-.icon-button:hover {
-  background: var(--surface-soft);
+@media (hover: hover) and (pointer: fine) {
+  .icon-button:hover {
+    background: var(--surface-soft);
+  }
 }
 .live-dot {
   display: inline-block;
@@ -238,9 +240,11 @@ svg {
   color: var(--accent-ink);
   font-weight: 650;
 }
-.sidebar-nav > button:not(.active):hover {
-  background: var(--surface-soft);
-  color: var(--ink);
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-nav > button:not(.active):hover {
+    background: var(--surface-soft);
+    color: var(--ink);
+  }
 }
 .nav-indicator {
   width: 5px;
@@ -335,8 +339,10 @@ svg {
   border-radius: 25px;
   font-size: 12px;
 }
-.location-button:hover {
-  background: var(--surface-soft);
+@media (hover: hover) and (pointer: fine) {
+  .location-button:hover {
+    background: var(--surface-soft);
+  }
 }
 .unit-switch {
   display: flex;
@@ -453,8 +459,10 @@ svg {
 .save-button.saved {
   color: #657149;
 }
-.save-button:hover {
-  background: #ffffff85;
+@media (hover: hover) and (pointer: fine) {
+  .save-button:hover {
+    background: #ffffff85;
+  }
 }
 .hero-body {
   display: flex;
@@ -674,9 +682,11 @@ svg {
   display: grid;
   place-items: center;
 }
-.dark-circle:hover {
-  background: #42482f;
-  transform: rotate(7deg);
+@media (hover: hover) and (pointer: fine) {
+  .dark-circle:hover {
+    background: #42482f;
+    transform: rotate(7deg);
+  }
 }
 .insight-orbit {
   position: absolute;
@@ -770,8 +780,10 @@ svg {
   border-radius: 18px;
   min-width: 52px;
 }
-.hour-column:hover {
-  background: var(--surface-soft);
+@media (hover: hover) and (pointer: fine) {
+  .hour-column:hover {
+    background: var(--surface-soft);
+  }
 }
 .hour-column.selected {
   background: var(--surface-soft);
@@ -868,8 +880,10 @@ svg {
   min-height: 181px;
   transition: transform 0.2s ease;
 }
-.metric-card:hover {
-  transform: translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+  .metric-card:hover {
+    transform: translateY(-3px);
+  }
 }
 .metric-heading {
   display: flex;
@@ -1269,8 +1283,10 @@ svg {
   color: var(--bg);
   font-size: 12px;
 }
-.primary-button:hover {
-  opacity: 0.85;
+@media (hover: hover) and (pointer: fine) {
+  .primary-button:hover {
+    opacity: 0.85;
+  }
 }
 .primary-button svg {
   width: 18px;
@@ -1551,8 +1567,10 @@ svg {
   padding: 11px 7px;
   border-radius: 16px;
 }
-.search-results button:hover {
-  background: var(--surface-soft);
+@media (hover: hover) and (pointer: fine) {
+  .search-results button:hover {
+    background: var(--surface-soft);
+  }
 }
 .search-pin {
   height: 38px;
@@ -3858,8 +3876,10 @@ svg {
   z-index: 1;
   transition: background 0.18s ease;
 }
-.voice-preview:hover {
-  background: #fff;
+@media (hover: hover) and (pointer: fine) {
+  .voice-preview:hover {
+    background: #fff;
+  }
 }
 .voice-waveform {
   display: flex;
