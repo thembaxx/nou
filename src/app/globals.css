@@ -1505,7 +1505,7 @@ svg {
   background: none;
   border: 0;
   outline: 0;
-  font-size: 12px;
+  font-size: max(12px, var(--touch-input-font-min, 0px));
   color: var(--ink);
 }
 .search-field input::placeholder {
@@ -4562,5 +4562,14 @@ progress::-moz-progress-bar {
   }
   .pwa-update p {
     flex-basis: 100%;
+  }
+}
+
+@media (pointer: coarse) {
+  :root {
+    --touch-input-font-min: 16px;
+  }
+  [aria-labelledby="activity-window-title"] :is(input, select) {
+    font-size: max(0.875rem, 16px);
   }
 }
